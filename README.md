@@ -1,3 +1,5 @@
+[![pypi](https://img.shields.io/pypi/v/tom-fink.svg)](https://pypi.python.org/pypi/tom-fink)
+
 # Fink Alert Broker Module for the TOM Toolkit
 
 This repository hosts the Fink Alert Broker Module for the TOM Toolkit. Fink is a broker currently connected to ZTF. More information on Fink at https://fink-broker.org/.
@@ -8,13 +10,13 @@ As of version 0.1, the module simply uses the Fink REST API to retrieve alerts. 
 
 First, install the module using pip
 
-```
+```bash
 pip install tom-fink
 ```
 
 then you need to declare it in your running TOM instance. To do so just add `tom_fink.fink.FinkBroker` to the `TOM_ALERT_CLASSES` in your TOM's `settings.py`:
 
-```
+```python
 TOM_ALERT_CLASSES = [
   'tom_alerts.brokers.alerce.ALeRCEBroker',
   ...,
@@ -24,7 +26,7 @@ TOM_ALERT_CLASSES = [
 
 and finally relaunch your TOM:
 
-```
+```bash
 ./manage.py runserver
 ```
 

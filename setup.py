@@ -53,7 +53,7 @@ setup(
         'fink'
     ],
     packages=find_packages(),
-    use_scm_version=True,
+    use_scm_version=False,
     setup_requires=['setuptools_scm', 'wheel'],
     install_requires=[
         'tomtoolkit==2.5.3',

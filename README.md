@@ -28,5 +28,7 @@ and finally relaunch your TOM:
 
 ## Todo list
 
+- [ ] Add a test suite (preferably running on GitHub Actions)
+- [ ] Add a linter (preferably running on GitHub Actions)
 - [ ] Update the Query Form with all API features
 - [ ] Enable querying livestreams using the Fink Kafka client

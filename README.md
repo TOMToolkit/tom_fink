@@ -1,6 +1,6 @@
-[![pypi](https://img.shields.io/pypi/v/tom-fink.svg)](https://pypi.python.org/pypi/tom-fink)
-
 # Fink Alert Broker Module for the TOM Toolkit
+
+[![pypi](https://img.shields.io/pypi/v/tom-fink.svg)](https://pypi.python.org/pypi/tom-fink)
 
 This repository hosts the Fink Alert Broker Module for the TOM Toolkit. Fink is a broker currently connected to ZTF. More information on Fink at https://fink-broker.org/.
 

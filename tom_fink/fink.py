@@ -33,6 +33,7 @@ class FinkQueryForm(GenericQueryForm):
     help_objectid = """
     Enter a valid object ID to access its data, e.g. try:
     - ZTF19acmdpyr, ZTF19acnjwgm, ZTF17aaaabte, ZTF20abqehqf, ZTF18acuajcr
+    This query will return all matching alerts.
     """
     objectId = forms.CharField(
         required=False,
@@ -54,7 +55,7 @@ class FinkQueryForm(GenericQueryForm):
     - 18h05m33.942s, +45d15m16.25s, 5
     - 18 05 33.942, +45 15 16.25, 5
     - 18:05:33.942, 45:15:16.25, 5
-    Note that the maximum radius is 60 arcseconds.
+    Note that the maximum radius is 60 arcseconds. This query will return all matching objects (not individual alerts).
     """
     conesearch = forms.CharField(
         required=False,
@@ -77,7 +78,7 @@ class FinkQueryForm(GenericQueryForm):
     - 2019-11-03 02:40:00, 2
     - 2458790.61111, 2
     - 58790.11111, 2
-    Maximum window is 180 minutes (query can vbe very long!).
+    Maximum window is 180 minutes (query can be very long!). This query will return all matching objects (not individual alerts).
     """
     datesearch = forms.CharField(
         required=False,
@@ -88,6 +89,27 @@ class FinkQueryForm(GenericQueryForm):
         widget=forms.TextInput(
             attrs={
                 'placeholder': 'startdate, window'
+            }
+        )
+    )
+
+    help_classsearch = """
+    Choose a class of interest from {}/api/v1/classes
+    to see the `n_alert` latest alerts processed by Fink. Example
+    - Early SN candidate, 10
+    - EB*, 10
+    - AGN, 15
+    - Solar System, 50
+    """.format(FINK_URL)
+    classsearch = forms.CharField(
+        required=False,
+        label='Class Search',
+        help_text=md.markdown(
+            help_classsearch
+        ),
+        widget=forms.TextInput(
+            attrs={
+                'placeholder': 'class, n_alert'
             }
         )
     )
@@ -157,6 +179,18 @@ class FinkBroker(GenericBroker):
                 json={
                     'startdate': startdate,
                     'window': window
+                }
+            )
+        elif 'classsearch' in parameters and len(parameters['classsearch'].strip()) > 0:
+            try:
+                class_name, n_alert = parameters['classsearch'].split(',')
+            except ValueError:
+                raise
+            r = requests.post(
+                FINK_URL + '/api/v1/latests',
+                json={
+                    'class': class_name,
+                    'n': n_alert
                 }
             )
         else:

@@ -18,6 +18,7 @@ from tom_alerts.alerts import GenericAlert, GenericBroker, GenericQueryForm
 
 from django import forms
 import requests
+import markdown as md
 
 FINK_URL = "http://134.158.75.151:24000"
 COLUMNS = 'i:candid,d:rfscore,i:ra,i:dec,i:jd,i:magpsf,i:objectId,d:cdsxmatch'
@@ -29,7 +30,67 @@ class FinkQueryForm(GenericQueryForm):
         * ObjectId search
 
     """
-    objectId = forms.CharField(required=False, label='ZTF Object ID')
+    help_objectid = """
+    Enter a valid object ID to access its data, e.g. try:
+    - ZTF19acmdpyr, ZTF19acnjwgm, ZTF17aaaabte, ZTF20abqehqf, ZTF18acuajcr
+    """
+    objectId = forms.CharField(
+        required=False,
+        label='ZTF Object ID',
+        widget=forms.TextInput(
+            attrs={'placeholder': 'enter a valid ZTF object ID'}
+        ),
+        help_text=md.markdown(
+            help_objectid
+        ),
+    )
+
+    help_conesearch = """
+    Perform a conesearch around a position on the sky given by (RA, Dec, radius).
+    The initializer for RA/Dec is very flexible and supports inputs provided in a number of convenient formats.
+    The following ways of initializing a conesearch are all equivalent (radius in arcsecond):
+    - 271.3914265, 45.2545134, 5
+    - 271d23m29.135s, 45d15m16.25s, 5
+    - 18h05m33.942s, +45d15m16.25s, 5
+    - 18 05 33.942, +45 15 16.25, 5
+    - 18:05:33.942, 45:15:16.25, 5
+    Note that the maximum radius is 60 arcseconds.
+    """
+    conesearch = forms.CharField(
+        required=False,
+        label='Cone Search',
+        help_text=md.markdown(
+            help_conesearch
+        ),
+        widget=forms.TextInput(
+            attrs={
+                'placeholder': 'RA, Dec, radius'
+            }
+        )
+    )
+
+    help_datesearch = """
+    Choose a starting date and a time window to see all processed alerts in this period.
+    Dates are in UTC, and the time window in minutes.
+    Among several, you can choose YYYY-MM-DD hh:mm:ss, Julian Date, or Modified Julian Date.
+    Example of valid search with a window of 2 minutes:
+    - 2019-11-03 02:40:00, 2
+    - 2458790.61111, 2
+    - 58790.11111, 2
+    Maximum window is 180 minutes (query can vbe very long!).
+    """
+    datesearch = forms.CharField(
+        required=False,
+        label='Date Search',
+        help_text=md.markdown(
+            help_datesearch
+        ),
+        widget=forms.TextInput(
+            attrs={
+                'placeholder': 'startdate, window'
+            }
+        )
+    )
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -73,9 +134,43 @@ class FinkBroker(GenericBroker):
                     'columns': COLUMNS
                 }
             )
-            r.raise_for_status()
-            data = r.json()
-            return iter(data)
+        elif 'conesearch' in parameters and len(parameters['conesearch'].strip()) > 0:
+            try:
+                ra, dec, radius = parameters['conesearch'].split(',')
+            except ValueError:
+                raise
+            r = requests.post(
+                FINK_URL + '/api/v1/explorer',
+                json={
+                    'ra': ra,
+                    'dec': dec,
+                    'radius': radius
+                }
+            )
+        elif 'datesearch' in parameters and len(parameters['datesearch'].strip()) > 0:
+            try:
+                startdate, window = parameters['datesearch'].split(',')
+            except ValueError:
+                raise
+            r = requests.post(
+                FINK_URL + '/api/v1/explorer',
+                json={
+                    'startdate': startdate,
+                    'window': window
+                }
+            )
+        else:
+            msg = """
+            You need to enter one of the query field! Choose among:
+            search by ZTF objectId, conesearch, search by date, search by class,
+            search by SSO name.
+            """
+            raise NotImplementedError(msg)
+
+        r.raise_for_status()
+        data = r.json()
+
+        return iter(data)
 
     def fetch_alert(self, id: str):
         """ Call the Fink API based on parameters from the Query Form.

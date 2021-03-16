@@ -4,7 +4,12 @@
 
 This repository hosts the Fink Alert Broker Module for the TOM Toolkit. Fink is a broker currently connected to ZTF. More information on Fink at https://fink-broker.org/.
 
-As of version 0.1, the module simply uses the Fink REST API to retrieve alerts. Note that the Fink databases are updated once a day with the previous night alert data (hence you do not get live alerts for the moment).
+As of version 0.2, the module simply uses the Fink REST API to retrieve alerts. Note that the Fink databases are updated once a day with the previous night alert data (hence you do not get live alerts for the moment). Users can perform:
+- Search by ZTF object ID
+- Cone Search
+- Search by Date
+- Search by derived alert class
+- Search by Solar System name
 
 ## How to use the Fink module inside your TOM
 
@@ -34,5 +39,5 @@ and finally relaunch your TOM:
 
 - [ ] Add a test suite (preferably running on GitHub Actions)
 - [ ] Add a linter (preferably running on GitHub Actions)
-- [ ] Update the Query Form with all API features
+- [x] Update the Query Form with all API features
 - [ ] Enable querying livestreams using the Fink Kafka client

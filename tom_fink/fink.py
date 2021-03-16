@@ -18,6 +18,8 @@ from tom_alerts.alerts import GenericAlert, GenericBroker, GenericQueryForm
 
 from django import forms
 import requests
+import markdown as md
+import numpy as np
 
 FINK_URL = "http://134.158.75.151:24000"
 COLUMNS = 'i:candid,d:rfscore,i:ra,i:dec,i:jd,i:magpsf,i:objectId,d:cdsxmatch'
@@ -29,7 +31,124 @@ class FinkQueryForm(GenericQueryForm):
         * ObjectId search
 
     """
-    objectId = forms.CharField(required=False, label='ZTF Object ID')
+    help_objectid = """
+    Enter a valid object ID to access its data, e.g. try:
+    - ZTF19acmdpyr, ZTF19acnjwgm, ZTF17aaaabte, ZTF20abqehqf, ZTF18acuajcr
+    This query will return all matching alerts.
+    """
+    objectId = forms.CharField(
+        required=False,
+        label='ZTF Object ID',
+        widget=forms.TextInput(
+            attrs={'placeholder': 'enter a valid ZTF object ID'}
+        ),
+        help_text=md.markdown(
+            help_objectid
+        ),
+    )
+
+    help_conesearch = """
+    Perform a conesearch around a position on the sky given by (RA, Dec, radius).
+    The initializer for RA/Dec is very flexible and supports inputs provided in a number of convenient formats.
+    The following ways of initializing a conesearch are all equivalent (radius in arcsecond):
+    - 271.3914265, 45.2545134, 5
+    - 271d23m29.135s, 45d15m16.25s, 5
+    - 18h05m33.942s, +45d15m16.25s, 5
+    - 18 05 33.942, +45 15 16.25, 5
+    - 18:05:33.942, 45:15:16.25, 5
+    Note that the maximum radius is 60 arcseconds. This query will return all matching objects (not individual alerts).
+    """
+    conesearch = forms.CharField(
+        required=False,
+        label='Cone Search',
+        help_text=md.markdown(
+            help_conesearch
+        ),
+        widget=forms.TextInput(
+            attrs={
+                'placeholder': 'RA, Dec, radius'
+            }
+        )
+    )
+
+    help_datesearch = """
+    Choose a starting date and a time window to see all processed alerts in this period.
+    Dates are in UTC, and the time window in minutes.
+    Among several, you can choose YYYY-MM-DD hh:mm:ss, Julian Date, or Modified Julian Date.
+    Example of valid search with a window of 2 minutes:
+    - 2019-11-03 02:40:00, 2
+    - 2458790.61111, 2
+    - 58790.11111, 2
+    Maximum window is 180 minutes (query can be very long!). This query will return all matching objects (not individual alerts).
+    """
+    datesearch = forms.CharField(
+        required=False,
+        label='Date Search',
+        help_text=md.markdown(
+            help_datesearch
+        ),
+        widget=forms.TextInput(
+            attrs={
+                'placeholder': 'startdate, window'
+            }
+        )
+    )
+
+    help_classsearch = """
+    Choose a class of interest from {}/api/v1/classes
+    to see the `n_alert` latest alerts processed by Fink. Example
+    - Early SN candidate, 10
+    - EB*, 10
+    - AGN, 15
+    - Solar System, 50
+    """.format(FINK_URL)
+    classsearch = forms.CharField(
+        required=False,
+        label='Class Search',
+        help_text=md.markdown(
+            help_classsearch
+        ),
+        widget=forms.TextInput(
+            attrs={
+                'placeholder': 'class, n_alert'
+            }
+        )
+    )
+
+    help_ssosearch = """
+    The list of arguments for retrieving SSO data can be found at {}/api/v1/sso.
+    The numbers or designations are taken from the MPC archive.
+    When searching for a particular asteroid or comet, it is best to use the IAU number,
+    as in 4209 for asteroid "4209 Briggs". You can also try for numbered comet (e.g. 10P),
+    or interstellar object (none so far...). If the number does not yet exist, you can search for designation.
+    Here are some examples of valid queries:
+
+    * Asteroids by number (default)
+      * Asteroids (Main Belt): 4209, 1922
+      * Asteroids (Hungarians): 18582, 77799
+      * Asteroids (Jupiter Trojans): 4501, 1583
+      * Asteroids (Mars Crossers): 302530
+    * Asteroids by designation (if number does not exist yet)
+      * 2010JO69, 2017AD19, 2012XK111
+    * Comets by number (default)
+      * 10P, 249P, 124P
+    * Comets by designation (if number does no exist yet)
+      * C/2020V2, C/2020R2
+
+    Note for designation, you can also use space (2010 JO69 or C/2020 V2).
+    """.format(FINK_URL)
+    ssosearch = forms.CharField(
+        required=False,
+        label='Solar System Objects Search',
+        help_text=md.markdown(
+            help_ssosearch
+        ),
+        widget=forms.TextInput(
+            attrs={
+                'placeholder': 'sso_name'
+            }
+        )
+    )
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -65,7 +184,25 @@ class FinkBroker(GenericBroker):
             Iterable on alert data (list of dictionary). Alert data is in
             the form {column name: value}.
         """
-        if 'objectId' in parameters and len(parameters['objectId'].strip()) > 0:
+        # Check the user fills only one query form
+        allowed_search = [
+            'objectId', 'conesearch', 'datesearch', 'classsearch', 'ssosearch'
+        ]
+        nquery = np.sum([len(parameters[i].strip()) > 0 for i in allowed_search])
+        if nquery > 1:
+            msg = """
+            You must fill only one query form at a time! Edit your query to choose
+            only one query among: ZTF Object ID, Cone Search, Date Search, Class Search, Solar System Objects Search
+            """
+            raise NotImplementedError(msg)
+        elif nquery == 0:
+            msg = """
+            You must fill at least one query form! Edit your query to choose
+            one query among: ZTF Object ID, Cone Search, Date Search, Class Search, Solar System Objects Search
+            """
+            raise NotImplementedError(msg)
+
+        if len(parameters['objectId'].strip()) > 0:
             r = requests.post(
                 FINK_URL + '/api/v1/objects',
                 json={
@@ -73,9 +210,63 @@ class FinkBroker(GenericBroker):
                     'columns': COLUMNS
                 }
             )
-            r.raise_for_status()
-            data = r.json()
-            return iter(data)
+        elif len(parameters['conesearch'].strip()) > 0:
+            try:
+                ra, dec, radius = parameters['conesearch'].split(',')
+            except ValueError:
+                raise
+            r = requests.post(
+                FINK_URL + '/api/v1/explorer',
+                json={
+                    'ra': ra,
+                    'dec': dec,
+                    'radius': radius
+                }
+            )
+        elif len(parameters['datesearch'].strip()) > 0:
+            try:
+                startdate, window = parameters['datesearch'].split(',')
+            except ValueError:
+                raise
+            r = requests.post(
+                FINK_URL + '/api/v1/explorer',
+                json={
+                    'startdate': startdate,
+                    'window': window
+                }
+            )
+        elif len(parameters['classsearch'].strip()) > 0:
+            try:
+                class_name, n_alert = parameters['classsearch'].split(',')
+            except ValueError:
+                raise
+            r = requests.post(
+                FINK_URL + '/api/v1/latests',
+                json={
+                    'class': class_name,
+                    'n': n_alert
+                }
+            )
+        elif len(parameters['ssosearch'].strip()) > 0:
+            r = requests.post(
+                FINK_URL + '/api/v1/sso',
+                json={
+                    'n_or_d': parameters['ssosearch'].strip(),
+                    'columns': COLUMNS
+                }
+            )
+        else:
+            msg = """
+            You need to enter one of the query field! Choose among:
+            search by ZTF objectId, conesearch, search by date, search by class,
+            search by SSO name.
+            """
+            raise NotImplementedError(msg)
+
+        r.raise_for_status()
+        data = r.json()
+
+        return iter(data)
 
     def fetch_alert(self, id: str):
         """ Call the Fink API based on parameters from the Query Form.

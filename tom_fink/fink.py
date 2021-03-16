@@ -19,6 +19,7 @@ from tom_alerts.alerts import GenericAlert, GenericBroker, GenericQueryForm
 from django import forms
 import requests
 import markdown as md
+import numpy as np
 
 FINK_URL = "http://134.158.75.151:24000"
 COLUMNS = 'i:candid,d:rfscore,i:ra,i:dec,i:jd,i:magpsf,i:objectId,d:cdsxmatch'
@@ -114,6 +115,41 @@ class FinkQueryForm(GenericQueryForm):
         )
     )
 
+    help_ssosearch = """
+    The list of arguments for retrieving SSO data can be found at {}/api/v1/sso.
+    The numbers or designations are taken from the MPC archive.
+    When searching for a particular asteroid or comet, it is best to use the IAU number,
+    as in 4209 for asteroid "4209 Briggs". You can also try for numbered comet (e.g. 10P),
+    or interstellar object (none so far...). If the number does not yet exist, you can search for designation.
+    Here are some examples of valid queries:
+
+    * Asteroids by number (default)
+      * Asteroids (Main Belt): 4209, 1922
+      * Asteroids (Hungarians): 18582, 77799
+      * Asteroids (Jupiter Trojans): 4501, 1583
+      * Asteroids (Mars Crossers): 302530
+    * Asteroids by designation (if number does not exist yet)
+      * 2010JO69, 2017AD19, 2012XK111
+    * Comets by number (default)
+      * 10P, 249P, 124P
+    * Comets by designation (if number does no exist yet)
+      * C/2020V2, C/2020R2
+
+    Note for designation, you can also use space (2010 JO69 or C/2020 V2).
+    """.format(FINK_URL)
+    ssosearch = forms.CharField(
+        required=False,
+        label='Solar System Objects Search',
+        help_text=md.markdown(
+            help_ssosearch
+        ),
+        widget=forms.TextInput(
+            attrs={
+                'placeholder': 'sso_name'
+            }
+        )
+    )
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -148,7 +184,25 @@ class FinkBroker(GenericBroker):
             Iterable on alert data (list of dictionary). Alert data is in
             the form {column name: value}.
         """
-        if 'objectId' in parameters and len(parameters['objectId'].strip()) > 0:
+        # Check the user fills only one query form
+        allowed_search = [
+            'objectId', 'conesearch', 'datesearch', 'classsearch', 'ssosearch'
+        ]
+        nquery = np.sum([len(parameters[i].strip()) > 0 for i in allowed_search])
+        if nquery > 1:
+            msg = """
+            You must fill only one query form at a time! Edit your query to choose
+            only one query among: ZTF Object ID, Cone Search, Date Search, Class Search, Solar System Objects Search
+            """
+            raise NotImplementedError(msg)
+        elif nquery == 0:
+            msg = """
+            You must fill at least one query form! Edit your query to choose
+            one query among: ZTF Object ID, Cone Search, Date Search, Class Search, Solar System Objects Search
+            """
+            raise NotImplementedError(msg)
+
+        if len(parameters['objectId'].strip()) > 0:
             r = requests.post(
                 FINK_URL + '/api/v1/objects',
                 json={
@@ -156,7 +210,7 @@ class FinkBroker(GenericBroker):
                     'columns': COLUMNS
                 }
             )
-        elif 'conesearch' in parameters and len(parameters['conesearch'].strip()) > 0:
+        elif len(parameters['conesearch'].strip()) > 0:
             try:
                 ra, dec, radius = parameters['conesearch'].split(',')
             except ValueError:
@@ -169,7 +223,7 @@ class FinkBroker(GenericBroker):
                     'radius': radius
                 }
             )
-        elif 'datesearch' in parameters and len(parameters['datesearch'].strip()) > 0:
+        elif len(parameters['datesearch'].strip()) > 0:
             try:
                 startdate, window = parameters['datesearch'].split(',')
             except ValueError:
@@ -181,7 +235,7 @@ class FinkBroker(GenericBroker):
                     'window': window
                 }
             )
-        elif 'classsearch' in parameters and len(parameters['classsearch'].strip()) > 0:
+        elif len(parameters['classsearch'].strip()) > 0:
             try:
                 class_name, n_alert = parameters['classsearch'].split(',')
             except ValueError:
@@ -191,6 +245,14 @@ class FinkBroker(GenericBroker):
                 json={
                     'class': class_name,
                     'n': n_alert
+                }
+            )
+        elif len(parameters['ssosearch'].strip()) > 0:
+            r = requests.post(
+                FINK_URL + '/api/v1/sso',
+                json={
+                    'n_or_d': parameters['ssosearch'].strip(),
+                    'columns': COLUMNS
                 }
             )
         else:

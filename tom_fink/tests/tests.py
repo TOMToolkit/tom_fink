@@ -1,6 +1,6 @@
 from django.test import TestCase
 
-from tom_fink.fink import FinkQueryForm, FinkBroker
+# from tom_fink.fink import FinkQueryForm, FinkBroker
 
 
 class TestFinkQueryForm(TestCase):

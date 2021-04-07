@@ -24,6 +24,7 @@ import numpy as np
 FINK_URL = "http://134.158.75.151:24000"
 COLUMNS = 'i:candid,d:rfscore,i:ra,i:dec,i:jd,i:magpsf,i:objectId,d:cdsxmatch'
 
+
 class FinkQueryForm(GenericQueryForm):
     """ Class to organise the Query Form for Fink.
 
@@ -79,7 +80,8 @@ class FinkQueryForm(GenericQueryForm):
     - 2019-11-03 02:40:00, 2
     - 2458790.61111, 2
     - 58790.11111, 2
-    Maximum window is 180 minutes (query can be very long!). This query will return all matching objects (not individual alerts).
+    Maximum window is 180 minutes (query can be very long!). This query will return all matching objects (not individual
+    alerts).
     """
     datesearch = forms.CharField(
         required=False,

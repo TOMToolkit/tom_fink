@@ -1,6 +1,8 @@
 # Fink Alert Broker Module for the TOM Toolkit
 
 [![pypi](https://img.shields.io/pypi/v/tom-fink.svg)](https://pypi.python.org/pypi/tom-fink)
+[![Codacy Badge](https://app.codacy.com/project/badge/Grade/43466ecc9ffe4622b3492625a137a70c)](https://www.codacy.com/gh/TOMToolkit/tom_fink/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=TOMToolkit/tom_fink&amp;utm_campaign=Badge_Grade)
+[![Coverage Status](https://coveralls.io/repos/github/TOMToolkit/tom_fink/badge.svg?branch=main)](https://coveralls.io/github/TOMToolkit/tom_fink?branch=main)
 
 This repository hosts the Fink Alert Broker Module for the TOM Toolkit. Fink is a broker currently connected to ZTF. More information on Fink at https://fink-broker.org/.
 
@@ -38,6 +40,6 @@ and finally relaunch your TOM:
 ## Todo list
 
 - [ ] Add a test suite (preferably running on GitHub Actions)
-- [ ] Add a linter (preferably running on GitHub Actions)
+- [x] Add a linter (preferably running on GitHub Actions)
 - [x] Update the Query Form with all API features
 - [ ] Enable querying livestreams using the Fink Kafka client

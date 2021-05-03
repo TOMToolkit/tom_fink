@@ -20,7 +20,7 @@ from django import forms
 import requests
 import markdown as md
 import numpy as np
-from astropy.time import Time, TimeDelta
+from astropy.time import Time
 
 FINK_URL = "http://134.158.75.151:24000"
 COLUMNS = 'i:candid,d:rfscore,i:ra,i:dec,i:jd,i:magpsf,i:objectId,d:cdsxmatch'

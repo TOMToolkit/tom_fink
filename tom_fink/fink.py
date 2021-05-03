@@ -273,7 +273,7 @@ class FinkBroker(GenericBroker):
             )
         elif len(parameters['classsearchdate'].strip()) > 0:
             try:
-                class_name, n_days_in_past = parameters['classsearch'].split(',')
+                class_name, n_days_in_past = parameters['classsearchdate'].split(',')
             except ValueError:
                 raise
             now = Time.now().jd

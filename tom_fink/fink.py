@@ -276,16 +276,16 @@ class FinkBroker(GenericBroker):
                 class_name, n_days_in_past = parameters['classsearchdate'].split(',')
             except ValueError:
                 raise
-            now = Time.now().jd
-            jd_start = now - float(n_days_in_past)
-            jd_end = now
+            now = Time.now()
+            start = Time(now.jd - float(n_days_in_past), format='jd').iso
+            end = now.iso
             r = requests.post(
                 FINK_URL + '/api/v1/latests',
                 json={
                     'class': class_name,
                     'n': 1000,
-                    'startdate': jd_start,
-                    'stopdate': jd_end
+                    'startdate': start,
+                    'stopdate': end
                 }
             )
         elif len(parameters['ssosearch'].strip()) > 0:

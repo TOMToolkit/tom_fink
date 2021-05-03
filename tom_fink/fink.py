@@ -304,25 +304,22 @@ class FinkBroker(GenericBroker):
         Parameters
         ----------
         alert: dict
-            Dictionary containing alert data: {column name: value}. See
-            `self.fetch_alerts` for more information.
+            GenericAlert instance
 
         """
         _, created = Target.objects.get_or_create(
-            name=alert['i:objectId'],
+            name=alert['name'],
             type=Target.SIDEREAL
         )
-
-        print('created: ', created)
 
         if created is False:
             # create the target with name/RA/Dec if
             # the target name does not exist
             target = Target.objects.create(
-                name=alert['i:objectId'],
+                name=alert['name'],
                 type='SIDEREAL',
-                ra=alert['i:ra'],
-                dec=alert['i:dec'],
+                ra=alert['ra'],
+                dec=alert['dec'],
             )
         else:
             # do not recreate the target

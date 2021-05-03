@@ -107,7 +107,7 @@ class FinkQueryForm(GenericQueryForm):
     """.format(FINK_URL)
     classsearch = forms.CharField(
         required=False,
-        label='Class Search',
+        label='Class Search by number',
         help_text=md.markdown(
             help_classsearch
         ),
@@ -127,9 +127,9 @@ class FinkQueryForm(GenericQueryForm):
     """.format(FINK_URL)
     classsearchdate = forms.CharField(
         required=False,
-        label='Class Search',
+        label='Class Search by date',
         help_text=md.markdown(
-            help_classsearch
+            help_classsearchdate
         ),
         widget=forms.TextInput(
             attrs={

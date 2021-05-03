@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 from tom_alerts.alerts import GenericAlert, GenericBroker, GenericQueryForm
-from tom_targets.models import Target, TargetName
+from tom_targets.models import Target
 
 from django import forms
 import requests
@@ -312,6 +312,8 @@ class FinkBroker(GenericBroker):
             name=alert['i:objectId'],
             type=Target.SIDEREAL
         )
+
+        print('created: ', created)
 
         if created is False:
             # create the target with name/RA/Dec if

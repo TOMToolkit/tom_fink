@@ -308,14 +308,24 @@ class FinkBroker(GenericBroker):
             `self.fetch_alerts` for more information.
 
         """
-        target = Target.objects.create(
+        _, created = Target.objects.get_or_create(
             name=alert['i:objectId'],
-            type='SIDEREAL',
-            ra=alert['i:ra'],
-            dec=alert['i:dec'],
+            type=Target.SIDEREAL
         )
-        aliases = [TargetName(target=target, name=alert['i:objectId'])]
-        return target, [], aliases
+
+        if created is False:
+            # create the target with name/RA/Dec if
+            # the target name does not exist
+            target = Target.objects.create(
+                name=alert['i:objectId'],
+                type='SIDEREAL',
+                ra=alert['i:ra'],
+                dec=alert['i:dec'],
+            )
+        else:
+            # do not recreate the target
+            target = None
+        return target, created
 
     def to_generic_alert(self, alert):
         """ Extract relevant parameters from the Fink alert to the TOM interface

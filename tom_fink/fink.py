@@ -20,6 +20,7 @@ from django import forms
 import requests
 import markdown as md
 import numpy as np
+from astropy.time import Time, TimeDelta
 
 FINK_URL = "http://134.158.75.151:24000"
 COLUMNS = 'i:candid,d:rfscore,i:ra,i:dec,i:jd,i:magpsf,i:objectId,d:cdsxmatch'
@@ -117,6 +118,26 @@ class FinkQueryForm(GenericQueryForm):
         )
     )
 
+    help_classsearchdate = """
+    Choose a class of interest from {}/api/v1/classes
+    to see the alerts processed by Fink in the last `n_days_in_past` days. Example
+    - Early SN Ia the last day: Early SN candidate, 1
+    - Early SN Ia the last 10 days: Early SN candidate, 10
+    Note that n_days_in_past_max = 15.
+    """.format(FINK_URL)
+    classsearchdate = forms.CharField(
+        required=False,
+        label='Class Search',
+        help_text=md.markdown(
+            help_classsearch
+        ),
+        widget=forms.TextInput(
+            attrs={
+                'placeholder': 'class, n_days_in_past'
+            }
+        )
+    )
+
     help_ssosearch = """
     The list of arguments for retrieving SSO data can be found at {}/api/v1/sso.
     The numbers or designations are taken from the MPC archive.
@@ -188,7 +209,8 @@ class FinkBroker(GenericBroker):
         """
         # Check the user fills only one query form
         allowed_search = [
-            'objectId', 'conesearch', 'datesearch', 'classsearch', 'ssosearch'
+            'objectId', 'conesearch', 'datesearch',
+            'classsearch', 'classsearchdate', 'ssosearch'
         ]
         nquery = np.sum([len(parameters[i].strip()) > 0 for i in allowed_search])
         if nquery > 1:
@@ -247,6 +269,23 @@ class FinkBroker(GenericBroker):
                 json={
                     'class': class_name,
                     'n': n_alert
+                }
+            )
+        elif len(parameters['classsearchdate'].strip()) > 0:
+            try:
+                class_name, n_days_in_past = parameters['classsearch'].split(',')
+            except ValueError:
+                raise
+            now = Time.now().jd
+            jd_start = now - float(n_days_in_past)
+            jd_end = now
+            r = requests.post(
+                FINK_URL + '/api/v1/latests',
+                json={
+                    'class': class_name,
+                    'n': 1000,
+                    'startdate': jd_start,
+                    'stopdate': jd_end
                 }
             )
         elif len(parameters['ssosearch'].strip()) > 0:

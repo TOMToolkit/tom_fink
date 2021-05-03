@@ -298,7 +298,7 @@ class FinkBroker(GenericBroker):
     def process_reduced_data(self, target, alert=None):
         pass
 
-    def to_target(self, alert: dict) -> Target:
+    def to_target_from_generic(self, alert: dict) -> Target:
         """ Redirect query result to a Target
 
         Parameters
@@ -308,7 +308,7 @@ class FinkBroker(GenericBroker):
 
         """
         _, created = Target.objects.get_or_create(
-            name=alert['name'],
+            name=alert.name,
             type=Target.SIDEREAL
         )
 
@@ -316,10 +316,10 @@ class FinkBroker(GenericBroker):
             # create the target with name/RA/Dec if
             # the target name does not exist
             target = Target.objects.create(
-                name=alert['name'],
+                name=alert.name,
                 type='SIDEREAL',
-                ra=alert['ra'],
-                dec=alert['dec'],
+                ra=alert.ra,
+                dec=alert.dec,
             )
         else:
             # do not recreate the target

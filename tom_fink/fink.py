@@ -15,6 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 from tom_alerts.alerts import GenericAlert, GenericBroker, GenericQueryForm
+from tom_targets.models import Target
 
 from django import forms
 import requests
@@ -314,13 +315,7 @@ class FinkBroker(GenericBroker):
 
         Parameters
         ----------
-        parameters: dict
-            Dictionary that contains query parameters defined in the Form
-            Example: {
-                'query_name': 'toto',
-                'broker': 'Fink',
-                'objectId': 'ZTF19acnjwgm'
-            }
+        parameters: str
 
         Returns
         ----------
@@ -341,6 +336,23 @@ class FinkBroker(GenericBroker):
 
     def process_reduced_data(self, target, alert=None):
         pass
+
+    def to_target(self, alert: dict) -> Target:
+        """ Redirect query result to a Target
+
+        Parameters
+        ----------
+        alert: dict
+            GenericAlert instance
+
+        """
+        target = Target.objects.create(
+            name=alert.name,
+            type='SIDEREAL',
+            ra=alert.ra,
+            dec=alert.dec,
+        )
+        return target
 
     def to_generic_alert(self, alert):
         """ Extract relevant parameters from the Fink alert to the TOM interface

@@ -298,7 +298,7 @@ class FinkBroker(GenericBroker):
     def process_reduced_data(self, target, alert=None):
         pass
 
-    def to_target_from_generic(self, alert: dict) -> Target:
+    def to_target(self, alert: dict) -> Target:
         """ Redirect query result to a Target
 
         Parameters

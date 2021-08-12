@@ -15,11 +15,13 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 from tom_alerts.alerts import GenericAlert, GenericBroker, GenericQueryForm
+from tom_targets.models import Target
 
 from django import forms
 import requests
 import markdown as md
 import numpy as np
+from astropy.time import Time
 
 FINK_URL = "http://134.158.75.151:24000"
 COLUMNS = 'i:candid,d:rfscore,i:ra,i:dec,i:jd,i:magpsf,i:objectId,d:cdsxmatch'
@@ -106,13 +108,33 @@ class FinkQueryForm(GenericQueryForm):
     """.format(FINK_URL)
     classsearch = forms.CharField(
         required=False,
-        label='Class Search',
+        label='Class Search by number',
         help_text=md.markdown(
             help_classsearch
         ),
         widget=forms.TextInput(
             attrs={
                 'placeholder': 'class, n_alert'
+            }
+        )
+    )
+
+    help_classsearchdate = """
+    Choose a class of interest from {}/api/v1/classes
+    to see the alerts processed by Fink in the last `n_days_in_past` days. Example
+    - Early SN Ia the last day: Early SN candidate, 1
+    - Early SN Ia the last 10 days: Early SN candidate, 10
+    Note that n_days_in_past_max = 15.
+    """.format(FINK_URL)
+    classsearchdate = forms.CharField(
+        required=False,
+        label='Class Search by date',
+        help_text=md.markdown(
+            help_classsearchdate
+        ),
+        widget=forms.TextInput(
+            attrs={
+                'placeholder': 'class, n_days_in_past'
             }
         )
     )
@@ -188,7 +210,8 @@ class FinkBroker(GenericBroker):
         """
         # Check the user fills only one query form
         allowed_search = [
-            'objectId', 'conesearch', 'datesearch', 'classsearch', 'ssosearch'
+            'objectId', 'conesearch', 'datesearch',
+            'classsearch', 'classsearchdate', 'ssosearch'
         ]
         nquery = np.sum([len(parameters[i].strip()) > 0 for i in allowed_search])
         if nquery > 1:
@@ -249,6 +272,23 @@ class FinkBroker(GenericBroker):
                     'n': n_alert
                 }
             )
+        elif len(parameters['classsearchdate'].strip()) > 0:
+            try:
+                class_name, n_days_in_past = parameters['classsearchdate'].split(',')
+            except ValueError:
+                raise
+            now = Time.now()
+            start = Time(now.jd - float(n_days_in_past), format='jd').iso
+            end = now.iso
+            r = requests.post(
+                FINK_URL + '/api/v1/latests',
+                json={
+                    'class': class_name,
+                    'n': 1000,
+                    'startdate': start,
+                    'stopdate': end
+                }
+            )
         elif len(parameters['ssosearch'].strip()) > 0:
             r = requests.post(
                 FINK_URL + '/api/v1/sso',
@@ -275,13 +315,7 @@ class FinkBroker(GenericBroker):
 
         Parameters
         ----------
-        parameters: dict
-            Dictionary that contains query parameters defined in the Form
-            Example: {
-                'query_name': 'toto',
-                'broker': 'Fink',
-                'objectId': 'ZTF19acnjwgm'
-            }
+        parameters: str
 
         Returns
         ----------
@@ -302,6 +336,23 @@ class FinkBroker(GenericBroker):
 
     def process_reduced_data(self, target, alert=None):
         pass
+
+    def to_target(self, alert: dict) -> Target:
+        """ Redirect query result to a Target
+
+        Parameters
+        ----------
+        alert: dict
+            GenericAlert instance
+
+        """
+        target = Target.objects.create(
+            name=alert.name,
+            type='SIDEREAL',
+            ra=alert.ra,
+            dec=alert.dec,
+        )
+        return target
 
     def to_generic_alert(self, alert):
         """ Extract relevant parameters from the Fink alert to the TOM interface

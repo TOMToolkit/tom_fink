@@ -56,7 +56,7 @@ setup(
     use_scm_version=False,
     setup_requires=['setuptools_scm', 'wheel'],
     install_requires=[
-        'tomtoolkit~=2.7.0',
+        'tomtoolkit>=2.7,<2.9',
         'elasticsearch-dsl>=7.3,<7.5',
         'markdown'
     ],

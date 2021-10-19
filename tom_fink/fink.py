@@ -25,7 +25,7 @@ from astropy.time import Time
 
 from fink_client.consumer import AlertConsumer
 
-FINK_URL = "http://134.158.75.151:24000"
+FINK_URL = "https://fink-portal.org"
 COLUMNS = 'i:candid,d:rfscore,i:ra,i:dec,i:jd,i:magpsf,i:objectId,d:cdsxmatch'
 
 

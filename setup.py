@@ -58,7 +58,8 @@ setup(
     install_requires=[
         'tomtoolkit>=2.7,<2.10',
         'elasticsearch-dsl>=7.3,<7.5',
-        'markdown'
+        'markdown',
+        'fink-client'
     ],
     extras_require={
         'test': ['factory_boy>=3.1,<3.3']

@@ -379,5 +379,5 @@ class FinkBroker(GenericBroker):
             ra=alert['i:ra'],
             dec=alert['i:dec'],
             mag=alert['i:magpsf'],
-            score=alert['d:rfscore']
+            score=alert['d:rf_snia_vs_nonia']
         )

@@ -62,7 +62,10 @@ setup(
         'markupsafe==2.0.1'
     ],
     extras_require={
-        'test': ['factory_boy>=3.1,<3.3']
+        'test': [
+            'factory_boy>=3.1,<3.3',
+            'markupsafe==2.0.1'
+            ]
     },
     include_package_data=True,
 )

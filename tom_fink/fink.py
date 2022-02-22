@@ -24,7 +24,7 @@ import numpy as np
 from astropy.time import Time
 
 FINK_URL = "https://fink-portal.org"
-COLUMNS = 'i:candid,d:rfscore,i:ra,i:dec,i:jd,i:magpsf,i:objectId,d:cdsxmatch'
+COLUMNS = 'i:candid,d:rf_snia_vs_nonia,i:ra,i:dec,i:jd,i:magpsf,i:objectId,d:cdsxmatch'
 
 
 class FinkQueryForm(GenericQueryForm):

@@ -58,7 +58,8 @@ setup(
     install_requires=[
         'tomtoolkit>=2.7,<2.11',
         'elasticsearch-dsl>=7.3,<7.5',
-        'markdown'
+        'markdown',
+        'markupsafe==2.0.1'
     ],
     extras_require={
         'test': ['factory_boy>=3.1,<3.3']

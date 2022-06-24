@@ -307,6 +307,8 @@ class FinkBroker(GenericBroker):
 
         r.raise_for_status()
         data = r.json()
+        for d in data:
+            d = self._clean_date(d)
 
         return iter(data)
 
@@ -332,7 +334,13 @@ class FinkBroker(GenericBroker):
         )
         r.raise_for_status()
         data = r.json()
+        data = self._clean_date(data)
         return data
+
+    def _clean_date(self, parameters):
+        parameters['v:firstdate'] += ' UTC'
+        parameters['v:lastdate'] += ' UTC'
+        return parameters
 
     def process_reduced_data(self, target, alert=None):
         pass

@@ -2,8 +2,7 @@ from django.test import TestCase
 from tom_fink.fink import FinkBroker
 # from tom_fink.fink import FinkQueryForm, FinkBroker
 
-test_alert1 =  {
-    "d:cdsxmatch": "RRLyr",
+test_alert1 =  {,
     "i:candid": 1333145050315015017,
     "i:dec": 36.89327,
     "i:objectId": "ZTF18aaavxvj",
@@ -15,7 +14,6 @@ test_alert1 =  {
  }
 
 test_alert2 =  {
-    "d:cdsxmatch": "RRLyr",
     "i:candid": 1333145050315015017,
     "i:dec": 36.89327,
     "i:objectId": "ZTF18aaavxvj",

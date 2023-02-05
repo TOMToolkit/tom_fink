@@ -26,6 +26,7 @@ def boot_django():
             'django.contrib.auth',
             'django.contrib.contenttypes',
             'django_extensions',
+            'guardian',
             'tom_targets',
             'tom_observations',
             'tom_alerts',

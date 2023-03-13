@@ -26,7 +26,7 @@ from astropy.time import Time
 from fink_client.consumer import AlertConsumer
 
 FINK_URL = "https://fink-portal.org"
-COLUMNS = 'i:candid,d:rfscore,i:ra,i:dec,i:jd,i:magpsf,i:objectId,d:cdsxmatch'
+COLUMNS = 'i:candid,d:rf_snia_vs_nonia,i:ra,i:dec,i:jd,i:magpsf,i:objectId,d:cdsxmatch'
 
 
 class FinkQueryForm(GenericQueryForm):
@@ -465,7 +465,7 @@ class FinkBroker(GenericBroker):
             ra=alert['i:ra'],
             dec=alert['i:dec'],
             mag=alert['i:magpsf'],
-            score=alert['d:rfscore']
+            score=alert['d:rf_snia_vs_nonia']
         )
 
 

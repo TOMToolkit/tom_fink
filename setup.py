@@ -62,7 +62,7 @@ setup(
     ],
     extras_require={
         'test': [
-            'factory_boy>=3.1,<3.3',
+            'factory_boy>=3.1,<3.4',
         ]
     },
     include_package_data=True,

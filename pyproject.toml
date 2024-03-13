@@ -1,0 +1,49 @@
+[tool.poetry]
+name = "tom-fink"
+version = "0.0.0"  # version supplied by poetry-dynamic-versioning
+description = "The Fink Alert Broker Module for the TOM Toolkit. Fink is a broker currently connected to ZTF. More information on Fink at https://fi"
+authors = ["Julien Peloton"]
+license = "GPL-3.0 license"
+readme = "README.md"
+repository = "https://github.com/TOMToolkit/tom_fink"
+
+keywords = [
+    'tomtoolkit',
+    'astronomy',
+    'astrophysics',
+    'cosmology',
+    'science',
+    'observatory',
+    'alert',
+    'broker',
+    'fink'
+]
+
+[tool.poetry.dependencies]
+python = ">=3.8.1,<3.12"
+tomtoolkit = "^2.17.1"
+elasticsearch-dsl = "^8.12.0"
+Markdown = "^3.5.2"
+
+[tool.poetry.group.test.dependencies]
+factory_boy = ">=3.1,<3.3"
+
+[tool.poetry.group.lint.dependencies]
+flake8 = ">=6.0,<7.1"
+
+[tool.poetry-dynamic-versioning]
+enable = true
+vcs = "git"
+style = "pep440"
+# the default pattern regex makes the 'v' manditory
+# this pattern modifies the default regex in order to make the 'v' optional
+# ('v' becomes '[v]?' meaning a single v, [v], and ? means optional)
+pattern = "(?x)^[v]?((?P<epoch>\\d+)!)?(?P<base>\\d+(\\.\\d+)*)([-._]?((?P<stage>[a-zA-Z]+)[-._]?(?P<revision>\\d+)?))?(\\+(?P<tagged_metadata>.+))?$"
+
+# substitute version not only in pyproject.toml (which the config block above does)
+# but also the __version__.py file
+[tool.poetry-dynamic-versioning.substitution]
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

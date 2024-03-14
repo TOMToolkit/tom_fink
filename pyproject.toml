@@ -2,7 +2,12 @@
 name = "tom-fink"
 version = "0.0.0"  # version supplied by poetry-dynamic-versioning
 description = "The Fink Alert Broker Module for the TOM Toolkit. Fink is a broker currently connected to ZTF. More information on Fink at https://fi"
-authors = ["Julien Peloton"]
+authors = ["Julien Peloton <peloton@lal.in2p3.fr>"]
+maintainers = [
+    "William Lindstrom <llindstrom@lco.global>",
+    "Joey Chatelain <jchatelain@lco.global>",
+    "Rachel Street <rstreet@lco.global>"
+]
 license = "GPL-3.0 license"
 readme = "README.md"
 repository = "https://github.com/TOMToolkit/tom_fink"
@@ -17,6 +22,17 @@ keywords = [
     'alert',
     'broker',
     'fink'
+]
+
+classifiers=[
+    'Development Status :: 3 - Alpha',
+    'Intended Audience :: Science/Research',
+    'License :: OSI Approved :: BSD License',
+    'Operating System :: OS Independent',
+    'Programming Language :: Python :: 3',
+    'Programming Language :: Python :: 3.7',
+    'Topic :: Scientific/Engineering :: Astronomy',
+    'Topic :: Scientific/Engineering :: Physics'
 ]
 
 [tool.poetry.dependencies]

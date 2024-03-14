@@ -1,2 +1,0 @@
-# see setup.py install_requires and extra_requires for requirement lists
--e .[test]

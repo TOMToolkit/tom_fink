@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "tom-fink"
 version = "0.0.0"  # version supplied by poetry-dynamic-versioning
-description = "The Fink Alert Broker Module for the TOM Toolkit. Fink is a broker currently connected to ZTF. More information on Fink at https://fi"
+description = "The Fink Alert Broker Module for the TOM Toolkit. Fink is a broker currently connected to ZTF. More information on Fink at https://fink-portal.org"
 authors = ["Julien Peloton <peloton@lal.in2p3.fr>"]
 maintainers = [
     "William Lindstrom <llindstrom@lco.global>",

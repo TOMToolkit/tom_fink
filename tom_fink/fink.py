@@ -100,14 +100,14 @@ class FinkQueryForm(GenericQueryForm):
         )
     )
 
-    help_classsearch = """
-    Choose a class of interest from {}/api/v1/classes
+    help_classsearch = f"""
+    Choose a class of interest from {FINK_URL}/api/v1/classes
     to see the `n_alert` latest alerts processed by Fink. Example
     - Early SN candidate, 10
     - EB*, 10
     - AGN, 15
     - Solar System, 50
-    """.format(FINK_URL)
+    """
     classsearch = forms.CharField(
         required=False,
         label='Class Search by number',
@@ -121,13 +121,13 @@ class FinkQueryForm(GenericQueryForm):
         )
     )
 
-    help_classsearchdate = """
-    Choose a class of interest from {}/api/v1/classes
+    help_classsearchdate = f"""
+    Choose a class of interest from {FINK_URL}/api/v1/classes
     to see the alerts processed by Fink in the last `n_days_in_past` days. Example
     - Early SN Ia the last day: Early SN candidate, 1
     - Early SN Ia the last 10 days: Early SN candidate, 10
     Note that n_days_in_past_max = 15.
-    """.format(FINK_URL)
+    """
     classsearchdate = forms.CharField(
         required=False,
         label='Class Search by date',
@@ -141,8 +141,8 @@ class FinkQueryForm(GenericQueryForm):
         )
     )
 
-    help_ssosearch = """
-    The list of arguments for retrieving SSO data can be found through {}/api/v1/sso.
+    help_ssosearch = f"""
+    The list of arguments for retrieving SSO data can be found at {FINK_URL}/api/v1/sso.
     The numbers or designations are taken from the MPC archive.
     When searching for a particular asteroid or comet, it is best to use the IAU number,
     as in 4209 for asteroid "4209 Briggs". You can also try for numbered comet (e.g. 10P),
@@ -162,7 +162,7 @@ class FinkQueryForm(GenericQueryForm):
       * C/2020V2, C/2020R2
 
     Note for designation, you can also use space (2010 JO69 or C/2020 V2).
-    """.format(FINK_URL)
+    """
     ssosearch = forms.CharField(
         required=False,
         label='Solar System Objects Search',

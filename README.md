@@ -126,6 +126,20 @@ and you should have access to your targets, that are accessible from their topic
 
 ![targets](.github/livestream_targets.png)
 
+### Testing & debugging the connection
+
+Before running in production, we advise to make tests using a test stream, and polling a few alerts:
+
+```bash
+export FINK_CREDENTIAL_USERNAME= # provided when registering to Fink livestream
+export FINK_CREDENTIAL_GROUP_ID= # provided when registering to Fink livestream
+export FINK_CREDENTIAL_URL= # provided when registering to Fink livestream
+export FINK_TOPIC=fink_sso_ztf_candidates_ztf
+export FINK_MAX_POLL_NUMBER=2
+export FINK_TIMEOUT=10
+```
+
+This way, you will poll alerts two-by-two, and you will have a reservoir of thousands of alerts (solar system objects)!
 
 ## Todo list
 

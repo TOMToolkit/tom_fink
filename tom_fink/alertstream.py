@@ -88,7 +88,11 @@ class FinkAlertStream(AlertStream):
         while poll_number < int(self.max_poll_number):
             try:
                 logger.info(
-                    f"FinkAlertStream.listen opening stream: {self.url} with group_id: {self.group_id} (call number: {poll_number})"
+                    "FinkAlertStream.listen opening stream: {} with group_id: {} (call number: {})".format(
+                        self.url,
+                        self.group_id,
+                        poll_number
+                    )
                 )
                 topic, alert, key = consumer.poll(timeout=int(self.timeout))
 

@@ -98,12 +98,12 @@ registering new views: args: ('observations', <class 'tom_observations.api_views
 registering new views: args: ('dataproducts', <class 'tom_dataproducts.api_views.DataProductViewSet'>, 'dataproducts'), kwargs: {}
 registering new views: args: ('reduceddatums', <class 'tom_dataproducts.api_views.ReducedDatumViewSet'>, 'reduceddatums'), kwargs: {}
 NumExpr defaulting to 8 threads.
-FinkAlertStream.listen opening stream: 134.158.74.95:24499 with group_id: julien6 (call number: 0)
+FinkAlertStream.listen opening stream: IP:PORT with group_id: julien6 (call number: 0)
 read_streams FinkAlertStream TID=378166 ; thread identifier=125271444649536
 readstreams Command.handle() returning...
 fink.alert_logger topic: fink_sso_ztf_candidates_ztf
 fink.alert_logger value: ZTF24aakwfsz emitted 2024-04-23 07:26:57.998412 (received 2024-04-29 10:45:01)
-FinkAlertStream.listen opening stream: 134.158.74.95:24499 with group_id: julien6 (call number: 1)
+FinkAlertStream.listen opening stream: IP:PORT with group_id: julien6 (call number: 1)
 fink.alert_logger topic: fink_sso_ztf_candidates_ztf
 fink.alert_logger value: ZTF24aakwftv emitted 2024-04-23 07:27:39.003823 (received 2024-04-29 10:45:01)
 ...

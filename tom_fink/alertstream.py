@@ -137,8 +137,8 @@ def alert_logger(alert, topic):
     utc = time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime())
     logger.info("fink.alert_logger topic: {}".format(topic))
     logger.info(
-        "fink.alert_logger value: {} emitted {} (received {})".format(
-            alert["objectId"], alert["timestamp"], utc
+        "fink.alert_logger value: {} emitted {} JD (received {})".format(
+            alert["objectId"], alert["candidate"]["jd"], utc
         )
     )
 

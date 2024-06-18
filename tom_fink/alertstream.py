@@ -85,10 +85,11 @@ class FinkAlertStream(AlertStream):
         consumer = AlertConsumer([self.topic], myconfig, schema_path=None)
 
         poll_number = 0
+        header = "FinkAlertStream.listen"
         while poll_number < int(self.max_poll_number):
             try:
                 logger.info(
-                    f"FinkAlertStream.listen opening stream: {self.url} with group.id: {self.group_id} (call number: {poll_number})"
+                    f"{header} opening stream: {self.url} with group.id: {self.group_id} (call number: {poll_number})"
                 )
                 topic, alert, key = consumer.poll(timeout=int(self.timeout))
 
@@ -99,7 +100,7 @@ class FinkAlertStream(AlertStream):
                     logger.info("No alerts received")
                 poll_number += 1
             except Exception as ex:
-                logger.error(f"FinkAlertStream.listen: {ex}")
+                logger.error(f"{header}: {ex}")
                 logger.error(traceback.format_exc())
                 break
         consumer.close()

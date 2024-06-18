@@ -26,7 +26,7 @@ import numpy as np
 from astropy.time import Time
 
 FINK_URL = "https://fink-portal.org"
-COLUMNS = 'i:candid,d:rf_snia_vs_nonia,i:ra,i:dec,i:jd,i:magpsf,i:objectId,d:cdsxmatch'
+COLUMNS = "i:candid,d:rf_snia_vs_nonia,i:ra,i:dec,i:jd,i:magpsf,i:objectId,d:cdsxmatch"
 
 
 class FinkQueryForm(GenericQueryForm):
@@ -44,13 +44,9 @@ class FinkQueryForm(GenericQueryForm):
     """
     objectId = forms.CharField(
         required=False,
-        label='ZTF Object ID',
-        widget=forms.TextInput(
-            attrs={'placeholder': 'enter a valid ZTF object ID'}
-        ),
-        help_text=md.markdown(
-            help_objectid
-        ),
+        label="ZTF Object ID",
+        widget=forms.TextInput(attrs={"placeholder": "enter a valid ZTF object ID"}),
+        help_text=md.markdown(help_objectid),
     )
 
     help_conesearch = """
@@ -66,15 +62,9 @@ class FinkQueryForm(GenericQueryForm):
     """
     conesearch = forms.CharField(
         required=False,
-        label='Cone Search',
-        help_text=md.markdown(
-            help_conesearch
-        ),
-        widget=forms.TextInput(
-            attrs={
-                'placeholder': 'RA, Dec, radius'
-            }
-        )
+        label="Cone Search",
+        help_text=md.markdown(help_conesearch),
+        widget=forms.TextInput(attrs={"placeholder": "RA, Dec, radius"}),
     )
 
     help_datesearch = """
@@ -90,15 +80,9 @@ class FinkQueryForm(GenericQueryForm):
     """
     datesearch = forms.CharField(
         required=False,
-        label='Date Search',
-        help_text=md.markdown(
-            help_datesearch
-        ),
-        widget=forms.TextInput(
-            attrs={
-                'placeholder': 'startdate, window'
-            }
-        )
+        label="Date Search",
+        help_text=md.markdown(help_datesearch),
+        widget=forms.TextInput(attrs={"placeholder": "startdate, window"}),
     )
 
     help_classsearch = f"""
@@ -111,15 +95,9 @@ class FinkQueryForm(GenericQueryForm):
     """
     classsearch = forms.CharField(
         required=False,
-        label='Class Search by number',
-        help_text=md.markdown(
-            help_classsearch
-        ),
-        widget=forms.TextInput(
-            attrs={
-                'placeholder': 'class, n_alert'
-            }
-        )
+        label="Class Search by number",
+        help_text=md.markdown(help_classsearch),
+        widget=forms.TextInput(attrs={"placeholder": "class, n_alert"}),
     )
 
     help_classsearchdate = f"""
@@ -131,15 +109,9 @@ class FinkQueryForm(GenericQueryForm):
     """
     classsearchdate = forms.CharField(
         required=False,
-        label='Class Search by date',
-        help_text=md.markdown(
-            help_classsearchdate
-        ),
-        widget=forms.TextInput(
-            attrs={
-                'placeholder': 'class, n_days_in_past'
-            }
-        )
+        label="Class Search by date",
+        help_text=md.markdown(help_classsearchdate),
+        widget=forms.TextInput(attrs={"placeholder": "class, n_days_in_past"}),
     )
 
     help_ssosearch = f"""
@@ -166,21 +138,15 @@ class FinkQueryForm(GenericQueryForm):
     """
     ssosearch = forms.CharField(
         required=False,
-        label='Solar System Objects Search',
-        help_text=md.markdown(
-            help_ssosearch
-        ),
-        widget=forms.TextInput(
-            attrs={
-                'placeholder': 'sso_name'
-            }
-        )
+        label="Solar System Objects Search",
+        help_text=md.markdown(help_ssosearch),
+        widget=forms.TextInput(attrs={"placeholder": "sso_name"}),
     )
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.helper.layout = Layout(
-            HTML(f'''
+            HTML(f"""
                 <p>
                     <em>
                     TOM Toolkit Broker Module
@@ -192,15 +158,15 @@ class FinkQueryForm(GenericQueryForm):
                     Please see the <a href="{FINK_URL}/api" target="_blank">Fink API homepage</a>
                     for a detailed description of this broker.
                 </p>
-            '''),
+            """),
             self.common_layout,
             Fieldset(
                 None,
-                'objectId',
-                'conesearch',
-                'datesearch',
-                'classsearchdate',
-                'ssosearch'
+                "objectId",
+                "conesearch",
+                "datesearch",
+                "classsearchdate",
+                "ssosearch",
             ),
         )
 
@@ -213,7 +179,7 @@ class FinkBroker(GenericBroker):
     filters for querying, please see http://134.158.75.151:24000/api
     """
 
-    name = 'Fink'
+    name = "Fink"
     form = FinkQueryForm
 
     def fetch_alerts(self, parameters: dict) -> iter:
@@ -237,8 +203,12 @@ class FinkBroker(GenericBroker):
         """
         # Check the user fills only one query form
         allowed_search = [
-            'objectId', 'conesearch', 'datesearch',
-            'classsearch', 'classsearchdate', 'ssosearch'
+            "objectId",
+            "conesearch",
+            "datesearch",
+            "classsearch",
+            "classsearchdate",
+            "ssosearch",
         ]
         nquery = np.sum([len(parameters[i].strip()) > 0 for i in allowed_search])
         if nquery > 1:
@@ -254,75 +224,58 @@ class FinkBroker(GenericBroker):
             """
             raise NotImplementedError(msg)
 
-        if len(parameters['objectId'].strip()) > 0:
+        if len(parameters["objectId"].strip()) > 0:
             r = requests.post(
-                FINK_URL + '/api/v1/objects',
-                json={
-                    'objectId': parameters['objectId'].strip(),
-                    'columns': COLUMNS
-                }
+                FINK_URL + "/api/v1/objects",
+                json={"objectId": parameters["objectId"].strip(), "columns": COLUMNS},
             )
-        elif len(parameters['conesearch'].strip()) > 0:
+        elif len(parameters["conesearch"].strip()) > 0:
             try:
-                ra, dec, radius = parameters['conesearch'].split(',')
+                ra, dec, radius = parameters["conesearch"].split(",")
             except ValueError:
                 raise
             r = requests.post(
-                FINK_URL + '/api/v1/explorer',
-                json={
-                    'ra': ra,
-                    'dec': dec,
-                    'radius': radius
-                }
+                FINK_URL + "/api/v1/explorer",
+                json={"ra": ra, "dec": dec, "radius": radius},
             )
-        elif len(parameters['datesearch'].strip()) > 0:
+        elif len(parameters["datesearch"].strip()) > 0:
             try:
-                startdate, window = parameters['datesearch'].split(',')
+                startdate, window = parameters["datesearch"].split(",")
             except ValueError:
                 raise
             r = requests.post(
-                FINK_URL + '/api/v1/explorer',
-                json={
-                    'startdate': startdate,
-                    'window': window
-                }
+                FINK_URL + "/api/v1/explorer",
+                json={"startdate": startdate, "window": window},
             )
-        elif len(parameters['classsearch'].strip()) > 0:
+        elif len(parameters["classsearch"].strip()) > 0:
             try:
-                class_name, n_alert = parameters['classsearch'].split(',')
+                class_name, n_alert = parameters["classsearch"].split(",")
             except ValueError:
                 raise
             r = requests.post(
-                FINK_URL + '/api/v1/latests',
-                json={
-                    'class': class_name,
-                    'n': n_alert
-                }
+                FINK_URL + "/api/v1/latests", json={"class": class_name, "n": n_alert}
             )
-        elif len(parameters['classsearchdate'].strip()) > 0:
+        elif len(parameters["classsearchdate"].strip()) > 0:
             try:
-                class_name, n_days_in_past = parameters['classsearchdate'].split(',')
+                class_name, n_days_in_past = parameters["classsearchdate"].split(",")
             except ValueError:
                 raise
             now = Time.now()
-            start = Time(now.jd - float(n_days_in_past), format='jd').iso
+            start = Time(now.jd - float(n_days_in_past), format="jd").iso
             end = now.iso
             r = requests.post(
-                FINK_URL + '/api/v1/latests',
+                FINK_URL + "/api/v1/latests",
                 json={
-                    'class': class_name,
-                    'n': 1000,
-                    'startdate': start,
-                    'stopdate': end
-                }
+                    "class": class_name,
+                    "n": 1000,
+                    "startdate": start,
+                    "stopdate": end,
+                },
             )
-        elif len(parameters['ssosearch'].strip()) > 0:
+        elif len(parameters["ssosearch"].strip()) > 0:
             r = requests.post(
-                FINK_URL + '/api/v1/sso',
-                json={
-                    'n_or_d': parameters['ssosearch'].strip(),
-                    'columns': COLUMNS
-                }
+                FINK_URL + "/api/v1/sso",
+                json={"n_or_d": parameters["ssosearch"].strip(), "columns": COLUMNS},
             )
         else:
             msg = """
@@ -351,11 +304,7 @@ class FinkBroker(GenericBroker):
             the form {column name: value}.
         """
         r = requests.post(
-            FINK_URL + '/api/v1/explorer',
-            json={
-                'objectId': id,
-                'columns': COLUMNS
-            }
+            FINK_URL + "/api/v1/explorer", json={"objectId": id, "columns": COLUMNS}
         )
         r.raise_for_status()
         data = r.json()
@@ -375,7 +324,7 @@ class FinkBroker(GenericBroker):
         """
         target = Target.objects.create(
             name=alert.name,
-            type='SIDEREAL',
+            type="SIDEREAL",
             ra=alert.ra,
             dec=alert.dec,
         )
@@ -396,15 +345,15 @@ class FinkBroker(GenericBroker):
             Alert columns to be displayed on the TOM interface
         """
         # This URL points to the objectId page in the Fink Science Portal
-        url = '{}/{}'.format(FINK_URL, alert['i:objectId'])
+        url = "{}/{}".format(FINK_URL, alert["i:objectId"])
 
         return GenericAlert(
-            timestamp=alert['i:jd'],
-            id=alert['i:candid'],
+            timestamp=alert["i:jd"],
+            id=alert["i:candid"],
             url=url,
-            name=alert['i:objectId'],
-            ra=alert['i:ra'],
-            dec=alert['i:dec'],
-            mag=alert['i:magpsf'],
-            score=alert.get('d:rf_snia_vs_nonia', 0)
+            name=alert["i:objectId"],
+            ra=alert["i:ra"],
+            dec=alert["i:dec"],
+            mag=alert["i:magpsf"],
+            score=alert.get("d:rf_snia_vs_nonia", 0),
         )

@@ -88,9 +88,7 @@ class FinkAlertStream(AlertStream):
         while poll_number < int(self.max_poll_number):
             try:
                 logger.info(
-                    "FinkAlertStream.listen opening stream: {} with group.id: {} (call number: {})".format(
-                        self.url, self.group_id, poll_number
-                    )
+                    f"FinkAlertStream.listen opening stream: {self.url} with group.id: {self.group_id} (call number: {poll_number})"
                 )
                 topic, alert, key = consumer.poll(timeout=int(self.timeout))
 
@@ -133,7 +131,7 @@ def alert_logger(alert, topic):
 
     """
     utc = time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime())
-    logger.info("fink.alert_logger topic: {}".format(topic))
+    logger.info(f"fink.alert_logger topic: {topic}")
     logger.info(
         "fink.alert_logger value: {} emitted {} JD (received {})".format(
             alert["objectId"], alert["candidate"]["jd"], utc

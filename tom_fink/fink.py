@@ -30,12 +30,13 @@ COLUMNS = 'i:candid,d:rf_snia_vs_nonia,i:ra,i:dec,i:jd,i:magpsf,i:objectId,d:cds
 
 
 class FinkQueryForm(GenericQueryForm):
-    """ Class to organise the Query Form for Fink.
+    """Class to organise the Query Form for Fink.
 
     It currently contains forms for
         * ObjectId search
 
     """
+
     help_objectid = """
     Enter a valid object ID to access its data, e.g. try:
     - ZTF19acmdpyr, ZTF19acnjwgm, ZTF17aaaabte, ZTF20abqehqf, ZTF18acuajcr
@@ -216,7 +217,7 @@ class FinkBroker(GenericBroker):
     form = FinkQueryForm
 
     def fetch_alerts(self, parameters: dict) -> iter:
-        """ Call the Fink API based on parameters from the Query Form.
+        """Call the Fink API based on parameters from the Query Form.
 
         Parameters
         ----------
@@ -229,7 +230,7 @@ class FinkBroker(GenericBroker):
             }
 
         Returns
-        ----------
+        -------
         out: iter
             Iterable on alert data (list of dictionary). Alert data is in
             the form {column name: value}.
@@ -337,14 +338,14 @@ class FinkBroker(GenericBroker):
         return iter(data)
 
     def fetch_alert(self, id: str):
-        """ Call the Fink API based on parameters from the Query Form.
+        """Call the Fink API based on parameters from the Query Form.
 
         Parameters
         ----------
         parameters: str
 
         Returns
-        ----------
+        -------
         out: iter
             Iterable on alert data (list of dictionary). Alert data is in
             the form {column name: value}.
@@ -364,7 +365,7 @@ class FinkBroker(GenericBroker):
         pass
 
     def to_target(self, alert: dict) -> Target:
-        """ Redirect query result to a Target
+        """Redirect query result to a Target
 
         Parameters
         ----------
@@ -381,7 +382,7 @@ class FinkBroker(GenericBroker):
         return target
 
     def to_generic_alert(self, alert):
-        """ Extract relevant parameters from the Fink alert to the TOM interface
+        """Extract relevant parameters from the Fink alert to the TOM interface
 
         Parameters
         ----------
@@ -390,7 +391,7 @@ class FinkBroker(GenericBroker):
             `self.fetch_alerts` for more information.
 
         Returns
-        ----------
+        -------
         out: GenericAlert
             Alert columns to be displayed on the TOM interface
         """

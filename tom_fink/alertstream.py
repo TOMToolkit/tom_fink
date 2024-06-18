@@ -89,9 +89,7 @@ class FinkAlertStream(AlertStream):
             try:
                 logger.info(
                     "FinkAlertStream.listen opening stream: {} with group.id: {} (call number: {})".format(
-                        self.url,
-                        self.group_id,
-                        poll_number
+                        self.url, self.group_id, poll_number
                     )
                 )
                 topic, alert, key = consumer.poll(timeout=int(self.timeout))
@@ -128,7 +126,7 @@ def alert_logger(alert, topic):
         If the target is already saved
 
     Raises
-    ----------
+    ------
     Exception (base)
         for any other failures than name clash when
         saving the target in the database.

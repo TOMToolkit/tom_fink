@@ -79,7 +79,7 @@ class FinkAlertStream(AlertStream):
         myconfig = {
             "username": self.username,
             "bootstrap.servers": self.url,
-            "group_id": self.group_id,
+            "group.id": self.group_id,
         }
 
         consumer = AlertConsumer([self.topic], myconfig, schema_path=None)
@@ -88,7 +88,7 @@ class FinkAlertStream(AlertStream):
         while poll_number < int(self.max_poll_number):
             try:
                 logger.info(
-                    "FinkAlertStream.listen opening stream: {} with group_id: {} (call number: {})".format(
+                    "FinkAlertStream.listen opening stream: {} with group.id: {} (call number: {})".format(
                         self.url,
                         self.group_id,
                         poll_number

@@ -36,11 +36,11 @@ classifiers=[
 ]
 
 [tool.poetry.dependencies]
-python = ">=3.8.1,<3.12"
+python = ">=3.9,<3.12"
 tomtoolkit = "^2.17.2"
 elasticsearch-dsl = "^8.12.0"
 Markdown = "^3.5.2"
-fink-client = "^7.2"
+fink-client = "^8.5"
 tom-alertstreams = "^0.6.2"
 
 [tool.poetry.group.test.dependencies]

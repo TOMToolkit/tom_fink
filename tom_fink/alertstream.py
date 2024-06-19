@@ -79,20 +79,17 @@ class FinkAlertStream(AlertStream):
         myconfig = {
             "username": self.username,
             "bootstrap.servers": self.url,
-            "group_id": self.group_id,
+            "group.id": self.group_id,
         }
 
         consumer = AlertConsumer([self.topic], myconfig, schema_path=None)
 
         poll_number = 0
+        header = "FinkAlertStream.listen"
         while poll_number < int(self.max_poll_number):
             try:
                 logger.info(
-                    "FinkAlertStream.listen opening stream: {} with group_id: {} (call number: {})".format(
-                        self.url,
-                        self.group_id,
-                        poll_number
-                    )
+                    f"{header} opening stream: {self.url} with group.id: {self.group_id} (call number: {poll_number})"
                 )
                 topic, alert, key = consumer.poll(timeout=int(self.timeout))
 
@@ -103,7 +100,7 @@ class FinkAlertStream(AlertStream):
                     logger.info("No alerts received")
                 poll_number += 1
             except Exception as ex:
-                logger.error(f"FinkAlertStream.listen: {ex}")
+                logger.error(f"{header}: {ex}")
                 logger.error(traceback.format_exc())
                 break
         consumer.close()
@@ -128,14 +125,14 @@ def alert_logger(alert, topic):
         If the target is already saved
 
     Raises
-    ----------
+    ------
     Exception (base)
         for any other failures than name clash when
         saving the target in the database.
 
     """
     utc = time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime())
-    logger.info("fink.alert_logger topic: {}".format(topic))
+    logger.info(f"fink.alert_logger topic: {topic}")
     logger.info(
         "fink.alert_logger value: {} emitted {} JD (received {})".format(
             alert["objectId"], alert["candidate"]["jd"], utc

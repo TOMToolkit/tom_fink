@@ -938,6 +938,21 @@ files = [
 Django = ">=2.2"
 
 [[package]]
+name = "django-htmx"
+version = "1.19.0"
+description = "Extensions for using Django with htmx."
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "django_htmx-1.19.0-py3-none-any.whl", hash = "sha256:875a642814e52278c1728842436beda2001847a493ab79fd82da3fb46ead140f"},
+    {file = "django_htmx-1.19.0.tar.gz", hash = "sha256:e7e17304e78e07f96eca0affc3ce1806edfdf3538bb7cb1912452b101f3e627d"},
+]
+
+[package.dependencies]
+asgiref = ">=3.6"
+django = ">=3.2"
+
+[[package]]
 name = "djangorestframework"
 version = "3.15.1"
 description = "Web APIs for Django, made easy."
@@ -2697,13 +2712,13 @@ files = [
 
 [[package]]
 name = "tomtoolkit"
-version = "2.18.5"
+version = "2.20.1"
 description = "TOM Toolkit and base modules"
 optional = false
 python-versions = "<3.12,>=3.8.1"
 files = [
-    {file = "tomtoolkit-2.18.5-py3-none-any.whl", hash = "sha256:1ed926029c34ce7b04668bcb4910ecf5087599556d3741fe7a816f598ddabdff"},
-    {file = "tomtoolkit-2.18.5.tar.gz", hash = "sha256:4ced9a856aa67bc2d6c79920d91a0a3338e261985010b782bbf74b65d8e484a5"},
+    {file = "tomtoolkit-2.20.1-py3-none-any.whl", hash = "sha256:5b116ef9ee6a1aaee8c704b96ed28e5523310d8840f4a8490496fe5b5e280e37"},
+    {file = "tomtoolkit-2.20.1.tar.gz", hash = "sha256:8af73d8350b7a29a5134538eb61afe6cdf47e61765bbe8f5c60dd29ab932b98e"},
 ]
 
 [package.dependencies]
@@ -2711,7 +2726,7 @@ astroplan = ">=0.8,<0.11"
 astropy = {version = ">=5.3.3,<6", markers = "python_version < \"3.12\" and python_version >= \"3.9\""}
 astroquery = "<1"
 beautifulsoup4 = "<5"
-crispy-bootstrap4 = ">=2023.1,<2024.2"
+crispy-bootstrap4 = ">=2023.1,<2024.11"
 django = "<5"
 django-bootstrap4 = ">3,<25"
 django-contrib-comments = ">=2.0,<3.0"
@@ -2721,7 +2736,8 @@ django-extensions = ">=3,<4"
 django-filter = ">=23,<25"
 django-gravatar2 = ">=1,<2"
 django-guardian = ">=2,<3"
-djangorestframework = "<4"
+django-htmx = ">=1,<2"
+djangorestframework = ">=3.15,<4"
 dramatiq = {version = "<2.0.0", extras = ["redis", "watch"]}
 fits2image = ">=0.4,<0.5"
 markdown = "<4"

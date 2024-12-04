@@ -1125,18 +1125,18 @@ zstandard = ["zstandard"]
 
 [[package]]
 name = "fink-client"
-version = "8.7"
+version = "8.8"
 description = "Light-weight client to manipulate alerts from Fink"
 optional = false
 python-versions = "*"
 files = [
-    {file = "fink-client-8.7.tar.gz", hash = "sha256:4cd6375e6152efa5d6f8c5d0440b8fc62b3568bef0a98d97afe8833a2c60af02"},
-    {file = "fink_client-8.7-py3-none-any.whl", hash = "sha256:a1b49fc6c379c3a191d0cde25d961cfc27345569c81346a5c2a2fadf0fded4f4"},
+    {file = "fink-client-8.8.tar.gz", hash = "sha256:28e637b0d1e63b3f79f4734d49280e2c87dd4b93cc7f8fd046e16d319a7f5561"},
+    {file = "fink_client-8.8-py3-none-any.whl", hash = "sha256:8e66a1d8e739b8e6ebe498951901d05fc714b5d8acadf2101c2bed3e35179e1a"},
 ]
 
 [package.dependencies]
 astropy = "*"
-confluent-kafka = "2.5.0"
+confluent-kafka = "*"
 coverage = "*"
 coveralls = "*"
 fastavro = "1.9.4"

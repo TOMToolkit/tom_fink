@@ -194,13 +194,13 @@ class FinkBroker(GenericBroker):
         if nquery > 1:
             msg = """
             You must fill only one query form at a time! Edit your query to choose
-            only one query among: ZTF Object ID, Cone Search, Date Search, Class Search, Solar System Objects Search
+            only one query among: ZTF Object ID, Cone Search, Class Search, Solar System Objects Search
             """
             raise NotImplementedError(msg)
         elif nquery == 0:
             msg = """
             You must fill at least one query form! Edit your query to choose
-            one query among: ZTF Object ID, Cone Search, Date Search, Class Search, Solar System Objects Search
+            one query among: ZTF Object ID, Cone Search, Class Search, Solar System Objects Search
             """
             raise NotImplementedError(msg)
 

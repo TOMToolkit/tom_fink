@@ -67,24 +67,6 @@ class FinkQueryForm(GenericQueryForm):
         widget=forms.TextInput(attrs={"placeholder": "RA, Dec, radius"}),
     )
 
-    help_datesearch = """
-    Choose a starting date and a time window to see all processed alerts in this period.
-    Dates are in UTC, and the time window in minutes.
-    Among several, you can choose YYYY-MM-DD hh:mm:ss, Julian Date, or Modified Julian Date.
-    Example of valid search with a window of 2 minutes:
-    - 2019-11-03 02:40:00, 2
-    - 2458790.61111, 2
-    - 58790.11111, 2
-    Maximum window is 180 minutes (query can be very long!). This query will return all matching objects (not individual
-    alerts).
-    """
-    datesearch = forms.CharField(
-        required=False,
-        label="Date Search",
-        help_text=md.markdown(help_datesearch),
-        widget=forms.TextInput(attrs={"placeholder": "startdate, window"}),
-    )
-
     help_classsearch = f"""
     Choose a class of interest from {FINK_URL}/api/v1/classes
     to see the `n_alert` latest alerts processed by Fink. Example
@@ -164,7 +146,6 @@ class FinkQueryForm(GenericQueryForm):
                 None,
                 "objectId",
                 "conesearch",
-                "datesearch",
                 "classsearchdate",
                 "ssosearch",
             ),
@@ -205,7 +186,6 @@ class FinkBroker(GenericBroker):
         allowed_search = [
             "objectId",
             "conesearch",
-            "datesearch",
             "classsearch",
             "classsearchdate",
             "ssosearch",
@@ -237,15 +217,6 @@ class FinkBroker(GenericBroker):
             r = requests.post(
                 FINK_URL + "/api/v1/explorer",
                 json={"ra": ra, "dec": dec, "radius": radius},
-            )
-        elif len(parameters["datesearch"].strip()) > 0:
-            try:
-                startdate, window = parameters["datesearch"].split(",")
-            except ValueError:
-                raise
-            r = requests.post(
-                FINK_URL + "/api/v1/explorer",
-                json={"startdate": startdate, "window": window},
             )
         elif len(parameters["classsearch"].strip()) > 0:
             try:

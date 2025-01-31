@@ -215,7 +215,7 @@ class FinkBroker(GenericBroker):
             except ValueError:
                 raise
             r = requests.post(
-                FINK_URL + "/api/v1/explorer",
+                FINK_URL + "/api/v1/conesearch",
                 json={"ra": ra, "dec": dec, "radius": radius},
             )
         elif len(parameters["classsearch"].strip()) > 0:
@@ -275,7 +275,7 @@ class FinkBroker(GenericBroker):
             the form {column name: value}.
         """
         r = requests.post(
-            FINK_URL + "/api/v1/explorer", json={"objectId": id, "columns": COLUMNS}
+            FINK_URL + "/api/v1/objects", json={"objectId": id, "columns": COLUMNS}
         )
         r.raise_for_status()
         data = r.json()

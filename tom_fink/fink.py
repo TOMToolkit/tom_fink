@@ -1,4 +1,4 @@
-# Copyright (c) 2021 Julien Peloton
+# Copyright (c) 2021-2025 Julien Peloton
 #
 # This file is part of TOM Toolkit
 #
@@ -25,7 +25,7 @@ import markdown as md
 import numpy as np
 from astropy.time import Time
 
-FINK_URL = "https://fink-portal.org"
+FINK_URL = "https://api.fink-portal.org"
 COLUMNS = "i:candid,d:rf_snia_vs_nonia,i:ra,i:dec,i:jd,i:magpsf,i:objectId,d:cdsxmatch"
 
 

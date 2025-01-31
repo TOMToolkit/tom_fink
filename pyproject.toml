@@ -1,17 +1,18 @@
-[tool.poetry]
+[project]
 name = "tom-fink"
 version = "0.0.0"  # version supplied by poetry-dynamic-versioning
 description = "The Fink Alert Broker Module for the TOM Toolkit. Fink is a broker currently connected to ZTF. More information on Fink at https://fink-portal.org"
-authors = ["Julien Peloton <peloton@lal.in2p3.fr>"]
+authors = [
+    {name = "Julien Peloton", email = "peloton@lal.in2p3.fr"}
+]
 maintainers = [
-    "William Lindstrom <llindstrom@lco.global>",
-    "Joey Chatelain <jchatelain@lco.global>",
-    "Rachel Street <rstreet@lco.global>"
+    {name = "William Lindstrom", email = "llindstrom@lco.global"},
+    {name = "Joey Chatelain", email = "jchatelain@lco.global"},
+    {name = "Rachel Street", email = "rstreet@lco.global"}
 ]
 license = "GPL-3.0 license"
 readme = "README.md"
 repository = "https://github.com/TOMToolkit/tom_fink"
-
 keywords = [
     'tomtoolkit',
     'astronomy',
@@ -23,7 +24,6 @@ keywords = [
     'broker',
     'fink'
 ]
-
 classifiers=[
     'Development Status :: 3 - Alpha',
     'Intended Audience :: Science/Research',
@@ -34,14 +34,14 @@ classifiers=[
     'Topic :: Scientific/Engineering :: Astronomy',
     'Topic :: Scientific/Engineering :: Physics'
 ]
-
-[tool.poetry.dependencies]
-python = ">=3.9,<3.12"
-tomtoolkit = "^2.17.2"
-elasticsearch-dsl = "^8.12.0"
-Markdown = "^3.5.2"
-fink-client = "^8.5"
-tom-alertstreams = "^0.6.2"
+requires-python = ">=3.9,<3.12"
+dependencies = [
+    "tomtoolkit>=2.17.2,<3",
+    "elasticsearch-dsl>=8.12.0,<9",
+    "Markdown>=3.5.2,<4",
+    "fink-client>=8.8,<9",
+    "tom-alertstreams>=0.6.2,<1"
+]
 
 [tool.poetry.group.test.dependencies]
 factory_boy = ">=3.1,<3.3"

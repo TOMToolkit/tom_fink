@@ -1,4 +1,4 @@
-# Copyright (c) 2021 Julien Peloton
+# Copyright (c) 2021-2025 Julien Peloton
 #
 # This file is part of TOM Toolkit
 #
@@ -25,7 +25,7 @@ import markdown as md
 import numpy as np
 from astropy.time import Time
 
-FINK_URL = "https://fink-portal.org"
+FINK_URL = "https://api.fink-portal.org"
 COLUMNS = "i:candid,d:rf_snia_vs_nonia,i:ra,i:dec,i:jd,i:magpsf,i:objectId,d:cdsxmatch"
 
 
@@ -65,24 +65,6 @@ class FinkQueryForm(GenericQueryForm):
         label="Cone Search",
         help_text=md.markdown(help_conesearch),
         widget=forms.TextInput(attrs={"placeholder": "RA, Dec, radius"}),
-    )
-
-    help_datesearch = """
-    Choose a starting date and a time window to see all processed alerts in this period.
-    Dates are in UTC, and the time window in minutes.
-    Among several, you can choose YYYY-MM-DD hh:mm:ss, Julian Date, or Modified Julian Date.
-    Example of valid search with a window of 2 minutes:
-    - 2019-11-03 02:40:00, 2
-    - 2458790.61111, 2
-    - 58790.11111, 2
-    Maximum window is 180 minutes (query can be very long!). This query will return all matching objects (not individual
-    alerts).
-    """
-    datesearch = forms.CharField(
-        required=False,
-        label="Date Search",
-        help_text=md.markdown(help_datesearch),
-        widget=forms.TextInput(attrs={"placeholder": "startdate, window"}),
     )
 
     help_classsearch = f"""
@@ -164,7 +146,6 @@ class FinkQueryForm(GenericQueryForm):
                 None,
                 "objectId",
                 "conesearch",
-                "datesearch",
                 "classsearchdate",
                 "ssosearch",
             ),
@@ -205,7 +186,6 @@ class FinkBroker(GenericBroker):
         allowed_search = [
             "objectId",
             "conesearch",
-            "datesearch",
             "classsearch",
             "classsearchdate",
             "ssosearch",
@@ -214,13 +194,13 @@ class FinkBroker(GenericBroker):
         if nquery > 1:
             msg = """
             You must fill only one query form at a time! Edit your query to choose
-            only one query among: ZTF Object ID, Cone Search, Date Search, Class Search, Solar System Objects Search
+            only one query among: ZTF Object ID, Cone Search, Class Search, Solar System Objects Search
             """
             raise NotImplementedError(msg)
         elif nquery == 0:
             msg = """
             You must fill at least one query form! Edit your query to choose
-            one query among: ZTF Object ID, Cone Search, Date Search, Class Search, Solar System Objects Search
+            one query among: ZTF Object ID, Cone Search, Class Search, Solar System Objects Search
             """
             raise NotImplementedError(msg)
 
@@ -235,17 +215,8 @@ class FinkBroker(GenericBroker):
             except ValueError:
                 raise
             r = requests.post(
-                FINK_URL + "/api/v1/explorer",
+                FINK_URL + "/api/v1/conesearch",
                 json={"ra": ra, "dec": dec, "radius": radius},
-            )
-        elif len(parameters["datesearch"].strip()) > 0:
-            try:
-                startdate, window = parameters["datesearch"].split(",")
-            except ValueError:
-                raise
-            r = requests.post(
-                FINK_URL + "/api/v1/explorer",
-                json={"startdate": startdate, "window": window},
             )
         elif len(parameters["classsearch"].strip()) > 0:
             try:
@@ -304,7 +275,7 @@ class FinkBroker(GenericBroker):
             the form {column name: value}.
         """
         r = requests.post(
-            FINK_URL + "/api/v1/explorer", json={"objectId": id, "columns": COLUMNS}
+            FINK_URL + "/api/v1/objects", json={"objectId": id, "columns": COLUMNS}
         )
         r.raise_for_status()
         data = r.json()

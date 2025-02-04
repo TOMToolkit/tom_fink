@@ -15,7 +15,6 @@ pip install tom-fink
 As of `tom-fink` version 0.4, the module simply uses the [Fink REST API](https://fink-broker.readthedocs.io/en/latest/services/science_portal/) to retrieve alerts. Note that the Fink databases are updated **once a day** with the previous night alert data (hence you do not get live alerts for the moment). Users can perform:
 - Search by ZTF object ID
 - Cone Search
-- Search by Date
 - Search by derived alert class
 - Search by Solar System name
 

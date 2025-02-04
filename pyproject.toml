@@ -40,7 +40,7 @@ dependencies = [
     "elasticsearch-dsl>=8.12.0,<9",
     "Markdown>=3.5.2,<4",
     "fink-client>=8.8,<9",
-    "tom-alertstreams>=0.6.2,<1"
+    "tom-alertstreams>=0.6.2,<2.0"
 ]
 
 [tool.poetry.group.test.dependencies]

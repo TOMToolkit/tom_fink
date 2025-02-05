@@ -1,6 +1,5 @@
 [project]
 name = "tom-fink"
-version = "0.0.0"  # version supplied by poetry-dynamic-versioning
 description = "The Fink Alert Broker Module for the TOM Toolkit. Fink is a broker currently connected to ZTF. More information on Fink at https://fink-portal.org"
 authors = [
     {name = "Julien Peloton", email = "peloton@lal.in2p3.fr"}
@@ -34,6 +33,7 @@ classifiers=[
     'Topic :: Scientific/Engineering :: Astronomy',
     'Topic :: Scientific/Engineering :: Physics'
 ]
+dynamic = ["version"]
 requires-python = ">=3.9,<3.13"
 dependencies = [
     "tomtoolkit>=2.17.2,<3",
@@ -42,6 +42,9 @@ dependencies = [
     "fink-client>=8.8,<9",
     "tom-alertstreams>=0.6.2,<2.0"
 ]
+
+[tool.poetry]
+version = "0.0.0" # version supplied by poetry-dynamic-versioning
 
 [tool.poetry.group.test.dependencies]
 factory_boy = ">=3.1,<3.3"
@@ -52,6 +55,9 @@ coveralls = "~3"
 
 [tool.poetry.group.lint.dependencies]
 flake8 = ">=6.0,<7.1"
+
+[tool.poetry.requires-plugins]
+poetry-dynamic-versioning = { version = ">=1.0.0,<2.0.0", extras = ["plugin"] }
 
 [tool.poetry-dynamic-versioning]
 enable = true

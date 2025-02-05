@@ -30,17 +30,17 @@ classifiers=[
     'License :: OSI Approved :: BSD License',
     'Operating System :: OS Independent',
     'Programming Language :: Python :: 3',
-    'Programming Language :: Python :: 3.7',
+    'Programming Language :: Python :: 3.11',
     'Topic :: Scientific/Engineering :: Astronomy',
     'Topic :: Scientific/Engineering :: Physics'
 ]
-requires-python = ">=3.9,<3.12"
+requires-python = ">=3.9,<3.13"
 dependencies = [
     "tomtoolkit>=2.17.2,<3",
     "elasticsearch-dsl>=8.12.0,<9",
     "Markdown>=3.5.2,<4",
     "fink-client>=8.8,<9",
-    "tom-alertstreams>=0.6.2,<1"
+    "tom-alertstreams>=0.6.2,<2.0"
 ]
 
 [tool.poetry.group.test.dependencies]

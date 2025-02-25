@@ -27,6 +27,7 @@ from astropy.time import Time
 
 FINK_URL = "https://api.fink-portal.org"
 COLUMNS = "i:candid,d:rf_snia_vs_nonia,i:ra,i:dec,i:jd,i:magpsf,i:objectId,d:cdsxmatch"
+SSO_COLUMNS = "i:ssnamenr,i:candid,i:ra,i:dec,i:jd,i:magpsf,i:objectId,d:roid"
 
 
 class FinkQueryForm(GenericQueryForm):
@@ -246,7 +247,7 @@ class FinkBroker(GenericBroker):
         elif len(parameters["ssosearch"].strip()) > 0:
             r = requests.post(
                 FINK_URL + "/api/v1/sso",
-                json={"n_or_d": parameters["ssosearch"].strip(), "columns": COLUMNS},
+                json={"n_or_d": parameters["ssosearch"].strip(), "columns": SSO_COLUMNS},
             )
         else:
             msg = """

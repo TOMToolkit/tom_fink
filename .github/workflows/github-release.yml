@@ -37,5 +37,5 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         tag_name: ${{ github.ref }}
-        release_name: Release - tom-fink ${{ github.ref }}
+        release_name: tom-fink ${{ github.ref }}
         draft: true

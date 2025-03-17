@@ -25,7 +25,8 @@ import markdown as md
 import numpy as np
 from astropy.time import Time
 
-FINK_URL = "https://api.fink-portal.org"
+FINK_URL = "https://fink-portal.org"
+FINK_API_URL = "https://api.fink-portal.org"
 COLUMNS = "i:candid,d:rf_snia_vs_nonia,i:ra,i:dec,i:jd,i:magpsf,i:objectId,d:cdsxmatch"
 SSO_COLUMNS = "i:ssnamenr,i:candid,i:ra,i:dec,i:jd,i:magpsf,i:objectId,d:roid"
 
@@ -69,7 +70,7 @@ class FinkQueryForm(GenericQueryForm):
     )
 
     help_classsearch = f"""
-    Choose a class of interest from {FINK_URL}/api/v1/classes
+    Choose a class of interest from {FINK_API_URL}/api/v1/classes
     to see the `n_alert` latest alerts processed by Fink. Example
     - Early SN candidate, 10
     - EB*, 10
@@ -84,7 +85,7 @@ class FinkQueryForm(GenericQueryForm):
     )
 
     help_classsearchdate = f"""
-    Choose a class of interest from {FINK_URL}/api/v1/classes
+    Choose a class of interest from {FINK_API_URL}/api/v1/classes
     to see the alerts processed by Fink in the last `n_days_in_past` days. Example
     - Early SN Ia the last day: Early SN candidate, 1
     - Early SN Ia the last 10 days: Early SN candidate, 10
@@ -98,7 +99,7 @@ class FinkQueryForm(GenericQueryForm):
     )
 
     help_ssosearch = f"""
-    The list of arguments for retrieving SSO data can be found at {FINK_URL}/api/v1/sso.
+    The list of arguments for retrieving SSO data can be found at {FINK_API_URL}/api/v1/sso.
     The numbers or designations are taken from the MPC archive.
     When searching for a particular asteroid or comet, it is best to use the IAU number,
     as in 4209 for asteroid "4209 Briggs". You can also try for numbered comet (e.g. 10P),
@@ -138,7 +139,7 @@ class FinkQueryForm(GenericQueryForm):
                     </em>
                 </p>
                 <p>
-                    Please see the <a href="{FINK_URL}/api" target="_blank">Fink API homepage</a>
+                    Please see the <a href="{FINK_API_URL}" target="_blank">Fink API homepage</a>
                     for a detailed description of this broker.
                 </p>
             """),
@@ -207,7 +208,7 @@ class FinkBroker(GenericBroker):
 
         if len(parameters["objectId"].strip()) > 0:
             r = requests.post(
-                FINK_URL + "/api/v1/objects",
+                FINK_API_URL + "/api/v1/objects",
                 json={"objectId": parameters["objectId"].strip(), "columns": COLUMNS},
             )
         elif len(parameters["conesearch"].strip()) > 0:
@@ -216,7 +217,7 @@ class FinkBroker(GenericBroker):
             except ValueError:
                 raise
             r = requests.post(
-                FINK_URL + "/api/v1/conesearch",
+                FINK_API_URL + "/api/v1/conesearch",
                 json={"ra": ra, "dec": dec, "radius": radius},
             )
         elif len(parameters["classsearch"].strip()) > 0:
@@ -225,7 +226,7 @@ class FinkBroker(GenericBroker):
             except ValueError:
                 raise
             r = requests.post(
-                FINK_URL + "/api/v1/latests", json={"class": class_name, "n": n_alert}
+                FINK_API_URL + "/api/v1/latests", json={"class": class_name, "n": n_alert}
             )
         elif len(parameters["classsearchdate"].strip()) > 0:
             try:
@@ -236,7 +237,7 @@ class FinkBroker(GenericBroker):
             start = Time(now.jd - float(n_days_in_past), format="jd").iso
             end = now.iso
             r = requests.post(
-                FINK_URL + "/api/v1/latests",
+                FINK_API_URL + "/api/v1/latests",
                 json={
                     "class": class_name,
                     "n": 1000,
@@ -246,7 +247,7 @@ class FinkBroker(GenericBroker):
             )
         elif len(parameters["ssosearch"].strip()) > 0:
             r = requests.post(
-                FINK_URL + "/api/v1/sso",
+                FINK_API_URL + "/api/v1/sso",
                 json={"n_or_d": parameters["ssosearch"].strip(), "columns": SSO_COLUMNS},
             )
         else:
@@ -276,7 +277,7 @@ class FinkBroker(GenericBroker):
             the form {column name: value}.
         """
         r = requests.post(
-            FINK_URL + "/api/v1/objects", json={"objectId": id, "columns": COLUMNS}
+            FINK_API_URL + "/api/v1/objects", json={"objectId": id, "columns": COLUMNS}
         )
         r.raise_for_status()
         data = r.json()

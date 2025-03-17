@@ -139,7 +139,7 @@ class FinkQueryForm(GenericQueryForm):
                     </em>
                 </p>
                 <p>
-                    Please see the <a href="{FINK_API_URL}/api" target="_blank">Fink API homepage</a>
+                    Please see the <a href="{FINK_API_URL}" target="_blank">Fink API homepage</a>
                     for a detailed description of this broker.
                 </p>
             """),

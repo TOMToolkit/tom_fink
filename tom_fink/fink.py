@@ -14,16 +14,25 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
-from tom_alerts.alerts import GenericAlert, GenericBroker, GenericQueryForm
-from tom_targets.models import Target
-from tom_fink import __version__ as fink_version
+
+import logging
+from typing import Any, Dict, List
 
 from django import forms
+
+from tom_alerts.alerts import GenericAlert, GenericBroker, GenericQueryForm
+from tom_dataservices.dataservices import DataService
+from tom_dataservices.forms import BaseQueryForm
+from tom_fink import __version__ as fink_version
+from tom_targets.models import Target
+
+from astropy.time import Time
 from crispy_forms.layout import Fieldset, HTML, Layout
-import requests
 import markdown as md
 import numpy as np
-from astropy.time import Time
+import requests
+
+logger = logging.getLogger(__name__)
 
 FINK_URL = "https://fink-portal.org"
 FINK_API_URL = "https://api.fink-portal.org"

@@ -344,3 +344,73 @@ class FinkBroker(GenericBroker):
             mag=alert["i:magpsf"],
             score=alert.get("d:rf_snia_vs_nonia", 0),
         )
+
+
+class FinkDataService(DataService):
+    """
+    This is an Example Data Service with the minimum required
+    functionality.
+    """
+    name = 'Fink'
+
+    def __init__(self):
+        self.fink_broker = FinkBroker()
+
+    @classmethod
+    def get_form_class(cls):
+        """
+        Points to the form class discussed below.
+        """
+        return FinkServiceForm
+
+    def build_query_parameters(self, parameters, **kwargs):
+        """
+        Use this function to convert the form results into the query parameters understood
+        by the Data Service.
+        """
+        logger.debug(f'build_query_parameters -- parameters: {parameters}')
+
+        # here, we're just passing the form data straight through # TODO: through to where?!
+        self.query_parameters = parameters
+        return self.query_parameters
+
+    def query_service(self, data, **kwargs):
+        """
+        This is where you actually make the call to the Data Service.
+        Return the results.
+        """
+        logger.debug(f'query_service -- data: {data}')
+
+        # for now, just extract object_id, but this could another type of query...
+        #object_id = data.get('objectId', '')
+
+        alerts = self.fink_broker.fetch_alerts(data)
+
+        self.query_results = alerts
+        return self.query_results
+
+    def query_targets(self, query_parameters, **kwargs) -> List[Dict[str, Any]]:
+        """
+        """
+        logger.debug(f'query_targets -- query_parameters: {query_parameters}')
+
+        # do the actual Fink query via query_service
+        query_results = self.query_service(query_parameters, **kwargs)
+        logger.debug(f'query_targets -- query_results: {query_results}')
+
+        return query_results
+
+    def create_target_from_query(self, target_result: Dict[str, Any], **kwargs) -> Target:
+        """
+        Docstring for create_target_from_query
+
+        :param self: Description
+        :param target_result: Description
+        :type target_result: Dict[str, Any]
+        :param kwargs: Description
+        :return: Description
+        :rtype: Target
+        """
+        generic_alert = self.fink_broker.to_generic_alert(target_result)
+        target = self.fink_broker.to_target(generic_alert)
+        return target

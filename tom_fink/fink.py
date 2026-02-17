@@ -35,7 +35,7 @@ import requests
 logger = logging.getLogger(__name__)
 
 FINK_URL = "https://fink-portal.org"
-FINK_API_URL = "https://api.fink-portal.org"
+FINK_API_URL = "https://api.ztf.fink-portal.org"
 COLUMNS = "i:candid,d:rf_snia_vs_nonia,i:ra,i:dec,i:jd,i:magpsf,i:objectId,d:cdsxmatch"
 SSO_COLUMNS = "i:ssnamenr,i:candid,i:ra,i:dec,i:jd,i:magpsf,i:objectId,d:roid"
 

@@ -40,7 +40,8 @@ COLUMNS = "i:candid,d:rf_snia_vs_nonia,i:ra,i:dec,i:jd,i:magpsf,i:objectId,d:cds
 SSO_COLUMNS = "i:ssnamenr,i:candid,i:ra,i:dec,i:jd,i:magpsf,i:objectId,d:roid"
 
 
-class FinkQueryForm(GenericQueryForm):
+class FinkServiceForm(BaseQueryForm):
+#class FinkQueryForm(GenericQueryForm):
     """Class to organise the Query Form for Fink.
 
     It currently contains forms for
@@ -152,7 +153,7 @@ class FinkQueryForm(GenericQueryForm):
                     for a detailed description of this broker.
                 </p>
             """),
-            self.common_layout,
+            #self.common_layout,
             Fieldset(
                 None,
                 "objectId",
@@ -161,6 +162,10 @@ class FinkQueryForm(GenericQueryForm):
                 "ssosearch",
             ),
         )
+
+
+#TODO: remove this during clean up; it's for temporary backwards compatibility
+FinkQueryForm = FinkServiceForm
 
 
 class FinkBroker(GenericBroker):

@@ -206,14 +206,15 @@ class FinkDataService(DataService):
             Iterable on alert data (list of dictionary). Alert data is in
             the form {column name: value}.
         """
-        # Check the user fills only one query form
         allowed_search = [
             "objectId",
             "conesearch",
-            "classsearch",
+            "classsearch",  # at present, not in Form layout (above)
             "classsearchdate",
             "ssosearch",
         ]
+
+        # first, check that one and only one search field is filled out
         nquery = np.sum([len(parameters[i].strip()) > 0 for i in allowed_search])
         if nquery > 1:
             msg = """
@@ -229,11 +230,13 @@ class FinkDataService(DataService):
             raise NotImplementedError(msg)
 
         if len(parameters["objectId"].strip()) > 0:
+            # object search
             response = requests.post(
                 FINK_API_URL + "/api/v1/objects",
                 json={"objectId": parameters["objectId"].strip(), "columns": COLUMNS},
             )
         elif len(parameters["conesearch"].strip()) > 0:
+            # cone search
             try:
                 ra, dec, radius = parameters["conesearch"].split(",")
             except ValueError:
@@ -243,6 +246,7 @@ class FinkDataService(DataService):
                 json={"ra": ra, "dec": dec, "radius": radius},
             )
         elif len(parameters["classsearch"].strip()) > 0:
+            # class search (at present, not in Form layout above)
             try:
                 class_name, n_alert = parameters["classsearch"].split(",")
             except ValueError:
@@ -251,6 +255,7 @@ class FinkDataService(DataService):
                 FINK_API_URL + "/api/v1/latests", json={"class": class_name, "n": n_alert}
             )
         elif len(parameters["classsearchdate"].strip()) > 0:
+            # class search with n_day_in_past
             try:
                 class_name, n_days_in_past = parameters["classsearchdate"].split(",")
             except ValueError:
@@ -268,6 +273,7 @@ class FinkDataService(DataService):
                 },
             )
         elif len(parameters["ssosearch"].strip()) > 0:
+            # SSO search
             response = requests.post(
                 FINK_API_URL + "/api/v1/sso",
                 json={"n_or_d": parameters["ssosearch"].strip(), "columns": SSO_COLUMNS},

@@ -15,12 +15,12 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
+from collections.abc import Iterator
 import logging
 from typing import Any, Dict, List
 
 from django import forms
 
-from tom_alerts.alerts import GenericAlert, GenericBroker, GenericQueryForm
 from tom_dataservices.dataservices import DataService
 from tom_dataservices.forms import BaseQueryForm
 from tom_fink import __version__ as fink_version
@@ -41,7 +41,6 @@ SSO_COLUMNS = "i:ssnamenr,i:candid,i:ra,i:dec,i:jd,i:magpsf,i:objectId,d:roid"
 
 
 class FinkServiceForm(BaseQueryForm):
-#class FinkQueryForm(GenericQueryForm):
     """Class to organise the Query Form for Fink.
 
     It currently contains forms for
@@ -153,7 +152,6 @@ class FinkServiceForm(BaseQueryForm):
                     for a detailed description of this broker.
                 </p>
             """),
-            #self.common_layout,
             Fieldset(
                 None,
                 "objectId",
@@ -164,22 +162,32 @@ class FinkServiceForm(BaseQueryForm):
         )
 
 
-#TODO: remove this during clean up; it's for temporary backwards compatibility
-FinkQueryForm = FinkServiceForm
-
-
-class FinkBroker(GenericBroker):
+class FinkDataService(DataService):
     """
-    The ``FinkBroker`` is the interface to the Fink alert broker.
-
-    For information regarding Fink and its available
-    filters for querying, please see http://134.158.75.151:24000/api
+    This is an Example Data Service with the minimum required
+    functionality.
     """
+    name = 'Fink'
 
-    name = "Fink"
-    form = FinkQueryForm
+    @classmethod
+    def get_form_class(cls):
+        """
+        Points to the form class discussed below.
+        """
+        return FinkServiceForm
 
-    def fetch_alerts(self, parameters: dict) -> iter:
+    def build_query_parameters(self, parameters, **kwargs):
+        """
+        Use this function to convert the form results into the query parameters understood
+        by the Data Service.
+        """
+        logger.debug(f'build_query_parameters -- parameters: {parameters}')
+
+        # here, we're just passing the form data straight through to query_targets
+        self.query_parameters = parameters
+        return self.query_parameters
+
+    def _fetch_alerts(self, parameters: dict) -> Iterator:
         """Call the Fink API based on parameters from the Query Form.
 
         Parameters
@@ -221,7 +229,7 @@ class FinkBroker(GenericBroker):
             raise NotImplementedError(msg)
 
         if len(parameters["objectId"].strip()) > 0:
-            r = requests.post(
+            response = requests.post(
                 FINK_API_URL + "/api/v1/objects",
                 json={"objectId": parameters["objectId"].strip(), "columns": COLUMNS},
             )
@@ -230,7 +238,7 @@ class FinkBroker(GenericBroker):
                 ra, dec, radius = parameters["conesearch"].split(",")
             except ValueError:
                 raise
-            r = requests.post(
+            response = requests.post(
                 FINK_API_URL + "/api/v1/conesearch",
                 json={"ra": ra, "dec": dec, "radius": radius},
             )
@@ -239,7 +247,7 @@ class FinkBroker(GenericBroker):
                 class_name, n_alert = parameters["classsearch"].split(",")
             except ValueError:
                 raise
-            r = requests.post(
+            response = requests.post(
                 FINK_API_URL + "/api/v1/latests", json={"class": class_name, "n": n_alert}
             )
         elif len(parameters["classsearchdate"].strip()) > 0:
@@ -250,7 +258,7 @@ class FinkBroker(GenericBroker):
             now = Time.now()
             start = Time(now.jd - float(n_days_in_past), format="jd").iso
             end = now.iso
-            r = requests.post(
+            response = requests.post(
                 FINK_API_URL + "/api/v1/latests",
                 json={
                     "class": class_name,
@@ -260,7 +268,7 @@ class FinkBroker(GenericBroker):
                 },
             )
         elif len(parameters["ssosearch"].strip()) > 0:
-            r = requests.post(
+            response = requests.post(
                 FINK_API_URL + "/api/v1/sso",
                 json={"n_or_d": parameters["ssosearch"].strip(), "columns": SSO_COLUMNS},
             )
@@ -272,145 +280,57 @@ class FinkBroker(GenericBroker):
             """
             raise NotImplementedError(msg)
 
-        r.raise_for_status()
-        data = r.json()
+        response.raise_for_status()
+        data = response.json()
 
-        return iter(data)
+        # turn the data iterable (container) into the alerts Iterator (stream)
+        alerts: Iterator = iter(data)
+        return alerts
 
-    def fetch_alert(self, id: str):
-        """Call the Fink API based on parameters from the Query Form.
-
-        Parameters
-        ----------
-        parameters: str
-
-        Returns
-        -------
-        out: iter
-            Iterable on alert data (list of dictionary). Alert data is in
-            the form {column name: value}.
-        """
-        r = requests.post(
-            FINK_API_URL + "/api/v1/objects", json={"objectId": id, "columns": COLUMNS}
-        )
-        r.raise_for_status()
-        data = r.json()
-        return data
-
-    def process_reduced_data(self, target, alert=None):
-        pass
-
-    def to_target(self, alert: dict) -> Target:
-        """Redirect query result to a Target
-
-        Parameters
-        ----------
-        alert: dict
-            GenericAlert instance
-
-        """
-        target = Target.objects.create(
-            name=alert.name,
-            type="SIDEREAL",
-            ra=alert.ra,
-            dec=alert.dec,
-        )
-        return target
-
-    def to_generic_alert(self, alert):
-        """Extract relevant parameters from the Fink alert to the TOM interface
-
-        Parameters
-        ----------
-        alert: dict
-            Dictionary containing alert data: {column name: value}. See
-            `self.fetch_alerts` for more information.
-
-        Returns
-        -------
-        out: GenericAlert
-            Alert columns to be displayed on the TOM interface
-        """
-        # This URL points to the objectId page in the Fink Science Portal
-        url = "{}/{}".format(FINK_URL, alert["i:objectId"])
-
-        return GenericAlert(
-            timestamp=alert["i:jd"],
-            id=alert["i:candid"],
-            url=url,
-            name=alert["i:objectId"],
-            ra=alert["i:ra"],
-            dec=alert["i:dec"],
-            mag=alert["i:magpsf"],
-            score=alert.get("d:rf_snia_vs_nonia", 0),
-        )
-
-
-class FinkDataService(DataService):
-    """
-    This is an Example Data Service with the minimum required
-    functionality.
-    """
-    name = 'Fink'
-
-    def __init__(self):
-        self.fink_broker = FinkBroker()
-
-    @classmethod
-    def get_form_class(cls):
-        """
-        Points to the form class discussed below.
-        """
-        return FinkServiceForm
-
-    def build_query_parameters(self, parameters, **kwargs):
-        """
-        Use this function to convert the form results into the query parameters understood
-        by the Data Service.
-        """
-        logger.debug(f'build_query_parameters -- parameters: {parameters}')
-
-        # here, we're just passing the form data straight through # TODO: through to where?!
-        self.query_parameters = parameters
-        return self.query_parameters
-
-    def query_service(self, data, **kwargs):
+    def query_service(self, query_parameters, **kwargs):  # type:ignore
         """
         This is where you actually make the call to the Data Service.
         Return the results.
         """
-        logger.debug(f'query_service -- data: {data}')
+        logger.debug(f'query_service -- query_parameters: {query_parameters}')
 
-        # for now, just extract object_id, but this could another type of query...
-        #object_id = data.get('objectId', '')
-
-        alerts = self.fink_broker.fetch_alerts(data)
+        # _fetch_alerts is refactored from the original FinkBroker
+        alerts = self._fetch_alerts(query_parameters)
 
         self.query_results = alerts
-        return self.query_results
+        return alerts
 
     def query_targets(self, query_parameters, **kwargs) -> List[Dict[str, Any]]:
         """
+        :param query_parameters: The query_parameters returned by `build_query_parameters`
+        :type query_parameters: Dict[str, str]
         """
         logger.debug(f'query_targets -- query_parameters: {query_parameters}')
 
         # do the actual Fink query via query_service
         query_results = self.query_service(query_parameters, **kwargs)
-        logger.debug(f'query_targets -- query_results: {query_results}')
 
+        # each Dict in this List[Dict] will be passed to create_target_from_query
         return query_results
 
     def create_target_from_query(self, target_result: Dict[str, Any], **kwargs) -> Target:
         """
-        Docstring for create_target_from_query
+        Create a Target from a selected individual alert.
 
         :param self: Description
-        :param target_result: Description
+        :param target_result: Dict of Target data for selected Target
         :type target_result: Dict[str, Any]
         :param kwargs: Description
         :return: Description
+
         :rtype: Target
         """
-        generic_alert = self.fink_broker.to_generic_alert(target_result)
-        target = self.fink_broker.to_target(generic_alert)
+        # extract values from query target_result and create Target
+        target, _ = Target.objects.get_or_create(
+            name=target_result['i:objectId'],
+            type='SIDEREAL',
+            ra=target_result['i:ra'],
+            dec=target_result['i:dec'],
+        )
+
         return target

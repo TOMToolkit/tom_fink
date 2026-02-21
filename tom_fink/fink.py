@@ -308,17 +308,66 @@ class FinkDataService(DataService):
         return alerts
 
     def query_targets(self, query_parameters, **kwargs) -> List[Dict[str, Any]]:
-        """
+        """Return a List[Dict] of Target data. Each List element becomes a row in the
+        selectable target create table. Each Dict item becomes a column in the table.
+
         :param query_parameters: The query_parameters returned by `build_query_parameters`
         :type query_parameters: Dict[str, str]
+
+        Here's is an example of a single alert from an Object query
+        alerts[0]: {
+           'i:objectId': 'ZTF18abzktuy',
+           'i:ra': 92.5117956
+           'i:dec': 36.1095938,
+           'i:jd': 2461051.7947569,
+           'i:magpsf': 18.068764,
+           'd:cdsxmatch': 'EclBin',
+           'd:rf_snia_vs_nonia': 0.0,
+           'i:candid': 3297294755815010006,
+        }
+
         """
         logger.debug(f'query_targets -- query_parameters: {query_parameters}')
 
-        # do the actual Fink query via query_service
+        # query Fink via query_service,
+        # get an Iterator of alerts (not targets, not a list) in return
         query_results = self.query_service(query_parameters, **kwargs)
 
-        # each Dict in this List[Dict] will be passed to create_target_from_query
-        return query_results
+        # convert query_results: Iterator[Alert] to targets_from_query_result: Dict[target_name, alert]
+        alerts_for_target: Dict[str, List[Dict[str, Any]]] = {}  # Dict[target_name, List[alert]]
+        for ix, alert in enumerate(query_results):
+            logger.debug(f'query_targets -- alerts[{ix}]: {alert}')
+            target_name = alert['i:objectId']
+
+            # get (or create) the list of alerts for this target_name
+            alerts = alerts_for_target.get(target_name, [])
+            alerts.append(alert)
+            alerts_for_target[target_name] = alerts
+
+        targets_for_selection_table = []
+        for target_name, alerts in alerts_for_target.items():
+            # each alert in the alerts: List[alert] may have slightly different values,
+            # so derive value suitable for the table
+            median_ra = float(np.median([alert['i:ra'] for alert in alerts]))
+            median_dec = float(np.median([alert['i:dec'] for alert in alerts]))
+            median_mag = float(np.median([alert['i:magpsf'] for alert in alerts]))
+            jd_min = float(np.min([alert['i:jd'] for alert in alerts]))
+            jd_max = float(np.max([alert['i:jd'] for alert in alerts]))
+            # now create the dict whose fields appear in the Target table row for selection
+            target_table_row = {
+                'name': target_name,
+                'ra': median_ra,
+                'dec': median_dec,
+                'mag': median_mag,
+                'jd_min': jd_min,
+                'jd_max': jd_max,
+                'num_alerts': len(alerts),
+                'reduced_datums': {'photometry': alerts}
+            }
+            targets_for_selection_table.append(target_table_row)
+
+        return targets_for_selection_table
+
     def create_reduced_datums_from_query(self, target, data=None, data_type='photometry', **kwargs):
         """Create Photometry reduced_data instances from `data`. `data` is a List[alert]
         (the alerts returned by Fink).

@@ -21,6 +21,7 @@ from typing import Any, Dict, List
 
 from django import forms
 
+from tom_dataproducts.models import ReducedDatum
 from tom_dataservices.dataservices import DataService
 from tom_dataservices.forms import BaseQueryForm
 from tom_fink import __version__ as fink_version
@@ -318,6 +319,36 @@ class FinkDataService(DataService):
 
         # each Dict in this List[Dict] will be passed to create_target_from_query
         return query_results
+    def create_reduced_datums_from_query(self, target, data=None, data_type='photometry', **kwargs):
+        """Create Photometry reduced_data instances from `data`. `data` is a List[alert]
+        (the alerts returned by Fink).
+
+        :param target: The Target these data pertain to.
+        :type target: tom_targets.models.Target
+        :param data: This is a list of alert dictionaries for the target. This is the
+        reduced_datums['photometry'] List[alert] constructed in query_targets.
+        :type data: List[Dict[str, Any]]
+
+        """
+        logger.debug(f'create_reduced_datums_from_query -- data:{type(data)} => {data}')
+
+        reduced_datums = []
+        for alert in data:
+            datum_value = alert  # include the raw alert items in the value dict
+            datum_value['magnitude'] = alert['i:magpsf']  # and add the expected item(s)
+
+            # convert 'i:jd' (Julian date) to timestamp
+            timestamp = Time(alert['i:jd'], format='jd').to_datetime()
+
+            reduced_datum, __ = ReducedDatum.objects.get_or_create(
+                target=target,
+                timestamp=timestamp,
+                data_type=data_type,
+                source_name='Fink',
+                value=datum_value
+            )
+            reduced_datums.append(reduced_datum)
+        return reduced_datums
 
     def create_target_from_query(self, target_result: Dict[str, Any], **kwargs) -> Target:
         """

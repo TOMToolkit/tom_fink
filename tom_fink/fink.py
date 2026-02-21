@@ -413,10 +413,10 @@ class FinkDataService(DataService):
         """
         # extract values from query target_result and create Target
         target, _ = Target.objects.get_or_create(
-            name=target_result['i:objectId'],
+            name=target_result['name'],
             type='SIDEREAL',
-            ra=target_result['i:ra'],
-            dec=target_result['i:dec'],
+            ra=target_result['ra'],
+            dec=target_result['dec'],
         )
 
         return target

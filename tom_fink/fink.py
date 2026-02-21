@@ -34,6 +34,7 @@ import numpy as np
 import requests
 
 logger = logging.getLogger(__name__)
+# logger.setLevel(logging.DEBUG)
 
 FINK_URL = "https://fink-portal.org"
 FINK_API_URL = "https://api.ztf.fink-portal.org"
@@ -401,7 +402,9 @@ class FinkDataService(DataService):
 
     def create_target_from_query(self, target_result: Dict[str, Any], **kwargs) -> Target:
         """
-        Create a Target from a selected individual alert.
+        Create a Target from a selected individual alert. (target w/alert info)
+
+        Selected Table to to Target object + reduced
 
         :param self: Description
         :param target_result: Dict of Target data for selected Target

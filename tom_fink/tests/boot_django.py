@@ -31,6 +31,7 @@ def boot_django():
             'tom_observations',
             'tom_alerts',
             'tom_dataproducts',
+            'tom_dataservices',
             APP_NAME,  # defined above
         ),
         EXTRA_FIELDS={},

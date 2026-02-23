@@ -16,8 +16,10 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 from collections.abc import Iterator
+import functools
 import logging
 from typing import Any, Dict, List
+import warnings
 
 from django import forms
 
@@ -429,3 +431,201 @@ class FinkDataService(DataService):
         )
 
         return target
+
+
+def deprecated(message):
+    def decorator(cls):
+        orig_init = cls.__init__
+
+        @functools.wraps(orig_init)
+        def new_init(self, *args, **kwargs):
+            warnings.warn(
+                f"{cls.__name__} is deprecated. {message}",
+                DeprecationWarning,
+                stacklevel=2,  # skip over the __init__ and reference the caller
+            )
+            orig_init(self, *args, **kwargs)
+        cls.__init__ = new_init
+        return cls
+    return decorator
+
+from tom_alerts.alerts import GenericBroker, GenericAlert  # noqa
+
+
+@deprecated("Use FinkDataService instead.")
+class FinkBroker(GenericBroker):
+    """
+    The ``FinkBroker`` is the interface to the Fink alert broker.
+
+    For information regarding Fink and its available
+    filters for querying, please see http://134.158.75.151:24000/api
+    """
+
+    name = "Fink"
+    form = FinkServiceForm
+
+    def fetch_alerts(self, parameters: dict) -> iter:
+        """Call the Fink API based on parameters from the Query Form.
+
+        Parameters
+        ----------
+        parameters: dict
+            Dictionary that contains query parameters defined in the Form
+            Example: {
+                'query_name': 'toto',
+                'broker': 'Fink',
+                'objectId': 'ZTF19acnjwgm'
+            }
+
+        Returns
+        -------
+        out: iter
+            Iterable on alert data (list of dictionary). Alert data is in
+            the form {column name: value}.
+        """
+        # Check the user fills only one query form
+        allowed_search = [
+            "objectId",
+            "conesearch",
+            "classsearch",
+            "classsearchdate",
+            "ssosearch",
+        ]
+        nquery = np.sum([len(parameters[i].strip()) > 0 for i in allowed_search])
+        if nquery > 1:
+            msg = """
+            You must fill only one query form at a time! Edit your query to choose
+            only one query among: ZTF Object ID, Cone Search, Class Search, Solar System Objects Search
+            """
+            raise NotImplementedError(msg)
+        elif nquery == 0:
+            msg = """
+            You must fill at least one query form! Edit your query to choose
+            one query among: ZTF Object ID, Cone Search, Class Search, Solar System Objects Search
+            """
+            raise NotImplementedError(msg)
+
+        if len(parameters["objectId"].strip()) > 0:
+            r = requests.post(
+                FINK_API_URL + "/api/v1/objects",
+                json={"objectId": parameters["objectId"].strip(), "columns": COLUMNS},
+            )
+        elif len(parameters["conesearch"].strip()) > 0:
+            try:
+                ra, dec, radius = parameters["conesearch"].split(",")
+            except ValueError:
+                raise
+            r = requests.post(
+                FINK_API_URL + "/api/v1/conesearch",
+                json={"ra": ra, "dec": dec, "radius": radius},
+            )
+        elif len(parameters["classsearch"].strip()) > 0:
+            try:
+                class_name, n_alert = parameters["classsearch"].split(",")
+            except ValueError:
+                raise
+            r = requests.post(
+                FINK_API_URL + "/api/v1/latests", json={"class": class_name, "n": n_alert}
+            )
+        elif len(parameters["classsearchdate"].strip()) > 0:
+            try:
+                class_name, n_days_in_past = parameters["classsearchdate"].split(",")
+            except ValueError:
+                raise
+            now = Time.now()
+            start = Time(now.jd - float(n_days_in_past), format="jd").iso
+            end = now.iso
+            r = requests.post(
+                FINK_API_URL + "/api/v1/latests",
+                json={
+                    "class": class_name,
+                    "n": 1000,
+                    "startdate": start,
+                    "stopdate": end,
+                },
+            )
+        elif len(parameters["ssosearch"].strip()) > 0:
+            r = requests.post(
+                FINK_API_URL + "/api/v1/sso",
+                json={"n_or_d": parameters["ssosearch"].strip(), "columns": SSO_COLUMNS},
+            )
+        else:
+            msg = """
+            You need to enter one of the query field! Choose among:
+            search by ZTF objectId, conesearch, search by date, search by class,
+            search by SSO name.
+            """
+            raise NotImplementedError(msg)
+
+        r.raise_for_status()
+        data = r.json()
+
+        return iter(data)
+
+    def fetch_alert(self, id: str):
+        """Call the Fink API based on parameters from the Query Form.
+
+        Parameters
+        ----------
+        parameters: str
+
+        Returns
+        -------
+        out: iter
+            Iterable on alert data (list of dictionary). Alert data is in
+            the form {column name: value}.
+        """
+        r = requests.post(
+            FINK_API_URL + "/api/v1/objects", json={"objectId": id, "columns": COLUMNS}
+        )
+        r.raise_for_status()
+        data = r.json()
+        return data
+
+    def process_reduced_data(self, target, alert=None):
+        pass
+
+    def to_target(self, alert: dict) -> Target:
+        """Redirect query result to a Target
+
+        Parameters
+        ----------
+        alert: dict
+            GenericAlert instance
+
+        """
+        target = Target.objects.create(
+            name=alert.name,
+            type="SIDEREAL",
+            ra=alert.ra,
+            dec=alert.dec,
+        )
+        return target
+
+    def to_generic_alert(self, alert):
+        """Extract relevant parameters from the Fink alert to the TOM interface
+
+        Parameters
+        ----------
+        alert: dict
+            Dictionary containing alert data: {column name: value}. See
+            `self.fetch_alerts` for more information.
+
+        Returns
+        -------
+        out: GenericAlert
+            Alert columns to be displayed on the TOM interface
+        """
+        # This URL points to the objectId page in the Fink Science Portal
+        url = "{}/{}".format(FINK_URL, alert["i:objectId"])
+
+        return GenericAlert(
+            timestamp=alert["i:jd"],
+            id=alert["i:candid"],
+            url=url,
+            name=alert["i:objectId"],
+            ra=alert["i:ra"],
+            dec=alert["i:dec"],
+            mag=alert["i:magpsf"],
+            score=alert.get("d:rf_snia_vs_nonia", 0),
+        )

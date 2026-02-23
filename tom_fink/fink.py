@@ -38,7 +38,7 @@ logger = logging.getLogger(__name__)
 
 FINK_URL = "https://fink-portal.org"
 FINK_API_URL = "https://api.ztf.fink-portal.org"
-COLUMNS = "i:candid,d:rf_snia_vs_nonia,i:ra,i:dec,i:jd,i:magpsf,i:objectId,d:cdsxmatch"
+COLUMNS = "i:candid,d:rf_snia_vs_nonia,i:ra,i:dec,i:jd,i:fid,i:magpsf,i:objectId,d:cdsxmatch"
 SSO_COLUMNS = "i:ssnamenr,i:candid,i:ra,i:dec,i:jd,i:magpsf,i:objectId,d:roid"
 
 
@@ -387,10 +387,15 @@ class FinkDataService(DataService):
             datum_value = alert  # include the raw alert items in the value dict
             datum_value['magnitude'] = alert['i:magpsf']  # and add the expected item(s)
 
+            # convert filter ID to filter (1=g; 2=R; 3=i)
+            filter_index = alert['i:fid'] - 1
+            filter_names = ['g', 'R', 'i']
+            datum_value['filter'] = filter_names[filter_index]
+
             # convert 'i:jd' (Julian date) to timestamp
             timestamp = Time(alert['i:jd'], format='jd').to_datetime()
 
-            reduced_datum, __ = ReducedDatum.objects.get_or_create(
+            reduced_datum, _ = ReducedDatum.objects.get_or_create(
                 target=target,
                 timestamp=timestamp,
                 data_type=data_type,

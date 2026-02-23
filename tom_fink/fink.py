@@ -386,6 +386,7 @@ class FinkDataService(DataService):
         for alert in data:
             datum_value = alert  # include the raw alert items in the value dict
             datum_value['magnitude'] = alert['i:magpsf']  # and add the expected item(s)
+            datum_value['error'] = 0.0
 
             # convert filter ID to filter (1=g; 2=R; 3=i)
             filter_index = alert['i:fid'] - 1

@@ -40,6 +40,7 @@ logger = logging.getLogger(__name__)
 
 FINK_URL = "https://fink-portal.org"
 FINK_API_URL = "https://api.ztf.fink-portal.org"
+FINK_REPO_URL = "https://github.com/TOMToolkit/tom_fink"
 COLUMNS = "i:candid,d:rf_snia_vs_nonia,i:ra,i:dec,i:jd,i:fid,i:magpsf,i:objectId,d:cdsxmatch"
 SSO_COLUMNS = "i:ssnamenr,i:candid,i:ra,i:dec,i:jd,i:magpsf,i:objectId,d:roid"
 
@@ -172,6 +173,8 @@ class FinkDataService(DataService):
     functionality.
     """
     name = 'Fink'
+    app_version = fink_version
+    app_link = FINK_REPO_URL
 
     @classmethod
     def get_form_class(cls):

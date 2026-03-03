@@ -310,9 +310,11 @@ class FinkDataService(DataService):
         response.raise_for_status()
         data = response.json()
 
-        # turn the data iterable (container) into the alerts Iterator (stream)
-        alerts: Iterator = iter(data)
-        return alerts
+        # NOTE: there's no benefit from creating an Iterator on the data:
+        # it's already in memory and there's no lazy-loading here because
+        # the data was already in the reponse
+
+        return data
 
     def query_service(self, query_parameters, **kwargs):  # type:ignore
         """
@@ -326,6 +328,10 @@ class FinkDataService(DataService):
 
         self.query_results = alerts
         return alerts
+
+    #
+    # Targets
+    #
 
     def query_targets(self, query_parameters, **kwargs) -> List[Dict[str, Any]]:
         """Return a List[Dict] of Target data. Each List element becomes a row in the
@@ -350,30 +356,30 @@ class FinkDataService(DataService):
         logger.debug(f'query_targets -- query_parameters: {query_parameters}')
 
         # query Fink via query_service,
-        # get an Iterator of alerts (not targets, not a list) in return
         query_results = self.query_service(query_parameters, **kwargs)
+        logger.debug(f'query_targets -- query_results: {query_results}')
 
-        # convert query_results: Iterator[Alert] to targets_from_query_result: Dict[target_name, alert]
+        # Reorganize the List[alert] into a target_name-keyed Dict of target-specific List[alert]
+        # (i.e. convert query_results: List[Alert] to alerts_for_target: Dict[target_name, List[alert]])
         alerts_for_target: Dict[str, List[Dict[str, Any]]] = {}  # Dict[target_name, List[alert]]
-        for ix, alert in enumerate(query_results):
-            logger.debug(f'query_targets -- alerts[{ix}]: {alert}')
-            target_name = alert['i:objectId']
+        for alert in query_results:
+            target_name = alert['i:objectId']  # will become dict key; value will be List[alert]
 
-            # get (or create) the list of alerts for this target_name
-            alerts = alerts_for_target.get(target_name, [])
+            alerts = alerts_for_target.get(target_name, [])  # get (or create) the list of alerts for this target_name
             alerts.append(alert)
             alerts_for_target[target_name] = alerts
 
+        # Create the List of targets to be offered to the User for actual Target creation.
         targets_for_selection_table = []
         for target_name, alerts in alerts_for_target.items():
             # each alert in the alerts: List[alert] may have slightly different values,
-            # so derive value suitable for the table
+            # so derive values suitable for the selection table
             median_ra = float(np.median([alert['i:ra'] for alert in alerts]))
             median_dec = float(np.median([alert['i:dec'] for alert in alerts]))
             median_mag = float(np.median([alert['i:magpsf'] for alert in alerts]))
             jd_min = float(np.min([alert['i:jd'] for alert in alerts]))
             jd_max = float(np.max([alert['i:jd'] for alert in alerts]))
-            # now create the dict whose fields appear in the Target table row for selection
+            # now create the dict whose fields appear as columns in the Target selection table row
             target_table_row = {
                 'name': target_name,
                 'ra': median_ra,
@@ -388,7 +394,76 @@ class FinkDataService(DataService):
 
         return targets_for_selection_table
 
-    def create_reduced_datums_from_query(self, target, data=None, data_type='photometry', **kwargs):
+    def create_target_from_query(self, target_result: Dict[str, Any], **kwargs) -> Target:
+        """
+        Create a Target from a selected individual alert. (target w/alert info)
+
+        Selected Table to to (unsaved) Target object + reduced
+
+        :param self: Description
+        :param target_result: Dict of Target data for selected Target
+        :type target_result: Dict[str, Any]
+        :param kwargs: Description
+
+        :return: An unsaved Target instance. Create with constructor; DON'T use `get_or_create()`
+        :rtype: Target
+        """
+
+        # extract values from query target_result and create Target
+        # NOTE: use constructor, not get_or_create, CreateTargetFromQueryView will save the Target
+        unsaved_target = Target(
+            name=target_result['name'],
+            type='SIDEREAL',
+            ra=target_result['ra'],
+            dec=target_result['dec'],
+        )
+        return unsaved_target
+
+    def build_query_parameters_from_target(self, target, **kwargs) -> Dict[str, Any]:
+        """
+        This is a method that builds query parameters based on an existing target object that will be
+        recognized by `query_service()`.
+
+        This can be done by either by re-creating the form fields set by the Data Service Form and
+        then calling `self.build_query_parameters()` with the results, or we can reproduce a limited
+        set of parameters uniquely for a target query.
+
+        In this particular case, we're looking for something that begins with ZTF: It could be the
+        target name or it could be an alias.
+
+        :param target: A target object to be queried
+        :return: query_parameters (usually a dict) that can be understood by `query_service()`
+        """
+        # first, see if the target.name itself is a ZTF object ID.
+        if target.name.startswith('ZTF'):
+            objectId = target.name
+        else:
+            # if it's not,
+            # search among the target's aliases for something that starts with 'ZTF'
+            ztf_aliases = target.aliases.filter(name__startswith='ZTF').order_by('-created')
+            if not ztf_aliases.exists():
+                raise ValueError(
+                    f"Target '{target.name}' has neither name nor alias starting with 'ZTF'. "
+                    f"Cannot build Fink query parameters."
+                )
+            if ztf_aliases.count() > 1:
+                logger.warning(
+                    f"Target '{target.name}' has multiple ZTF aliases: "
+                    f"{list(ztf_aliases.values_list('name', flat=True))}. "
+                    f"Using the most recent: '{ztf_aliases.first().name}'."
+                )
+            objectId = ztf_aliases.first().name  # use the most recent ZTF name found
+
+        # construct query parameters with objectId filled in and all other search fields empty
+        query_parameters = {
+            'objectId': objectId,
+            'conesearch': '',
+            'classsearch': '',
+            'classsearchdate': '',
+            'ssosearch': '',
+        }
+        logger.debug(f'build_query_parameters_from_target -- Target: {target}, query_parameters: {query_parameters}')
+        return query_parameters
 
     #
     # Photometry
@@ -417,6 +492,8 @@ class FinkDataService(DataService):
         assert len(alerts_for_target.items()) == 1
 
         return query_results
+
+    def create_reduced_datums_from_query(self, target, data=[], data_type='photometry', **kwargs):
         """Create Photometry reduced_data instances from `data`. `data` is a List[alert]
         (the alerts returned by Fink).
 
@@ -452,30 +529,6 @@ class FinkDataService(DataService):
             )
             reduced_datums.append(reduced_datum)
         return reduced_datums
-
-    def create_target_from_query(self, target_result: Dict[str, Any], **kwargs) -> Target:
-        """
-        Create a Target from a selected individual alert. (target w/alert info)
-
-        Selected Table to to Target object + reduced
-
-        :param self: Description
-        :param target_result: Dict of Target data for selected Target
-        :type target_result: Dict[str, Any]
-        :param kwargs: Description
-        :return: Description
-
-        :rtype: Target
-        """
-        # extract values from query target_result and create Target
-        target, _ = Target.objects.get_or_create(
-            name=target_result['name'],
-            type='SIDEREAL',
-            ra=target_result['ra'],
-            dec=target_result['dec'],
-        )
-
-        return target
 
 
 def deprecated(message):

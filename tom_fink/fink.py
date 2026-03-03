@@ -389,6 +389,34 @@ class FinkDataService(DataService):
         return targets_for_selection_table
 
     def create_reduced_datums_from_query(self, target, data=None, data_type='photometry', **kwargs):
+
+    #
+    # Photometry
+    #
+
+    def query_photometry(self, query_parameters, **kwargs):
+        query_results = self.query_service(query_parameters, **kwargs)
+        logger.debug(f'query_photometry -- query_results: {query_results}')
+
+        # Given the query_parameters, there should only be one Target among the Alerts
+        # (i.e. all the Alerts are for the same target (the one that was queried for).
+
+        # However, just to be sure, we re-organize:
+
+        # Reorganize the List[alert] into a target_name-keyed Dict of target-specific List[alert]
+        # (i.e. convert query_results: List[Alert] to alerts_for_target: Dict[target_name, List[alert]])
+        alerts_for_target: Dict[str, List[Dict[str, Any]]] = {}  # Dict[target_name, List[alert]]
+        for alert in query_results:
+            target_name = alert['i:objectId']  # will become dict key; value will be List[alert]
+
+            alerts = alerts_for_target.get(target_name, [])  # get (or create) the list of alerts for this target_name
+            alerts.append(alert)
+            alerts_for_target[target_name] = alerts
+
+        # There should only one key,value pair in alert_for_target (i.e. only one target with it's alerts)
+        assert len(alerts_for_target.items()) == 1
+
+        return query_results
         """Create Photometry reduced_data instances from `data`. `data` is a List[alert]
         (the alerts returned by Fink).
 

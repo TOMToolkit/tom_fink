@@ -183,6 +183,20 @@ class FinkDataService(DataService):
         """
         return FinkServiceForm
 
+    def get_simple_form_partial(self):
+        """
+
+        :param self: Description
+        """
+        return 'tom_fink/partials/fink_simple_form.html'
+
+    def get_advanced_form_partial(self):
+        """
+
+        :param self: Description
+        """
+        return 'tom_fink/partials/fink_advanced_form.html'
+
     def build_query_parameters(self, parameters, **kwargs):
         """
         Use this function to convert the form results into the query parameters understood

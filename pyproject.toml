@@ -34,9 +34,9 @@ classifiers=[
     'Topic :: Scientific/Engineering :: Physics'
 ]
 dynamic = ["version"]
-requires-python = ">=3.9,<3.13"
+requires-python = ">=3.10.0,<3.13"
 dependencies = [
-    "tomtoolkit>=2.17.2,<3",
+    "tomtoolkit>=3.0.0a0",
     "elasticsearch-dsl>=8.12.0,<9",
     "Markdown>=3.5.2,<4",
     "fink-client>=8.8,<9",

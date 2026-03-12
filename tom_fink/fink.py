@@ -30,7 +30,7 @@ from tom_fink import __version__ as fink_version
 from tom_targets.models import Target
 
 from astropy.time import Time
-from crispy_forms.layout import Fieldset, HTML, Layout
+from crispy_forms.layout import HTML, Layout
 import markdown as md
 import numpy as np
 import requests
@@ -141,30 +141,21 @@ class FinkServiceForm(BaseQueryForm):
         widget=forms.TextInput(attrs={"placeholder": "sso_name"}),
     )
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.helper.layout = Layout(
+    def get_layout(self):
+        layout = Layout(
             HTML(f"""
-                <p>
-                    <em>
-                    TOM Toolkit Broker Module
-                    (<a target="_blank" href="https://github.com/TOMToolkit/tom_fink">tom_fink</a>)
-                    version {fink_version}
-                    </em>
-                </p>
                 <p>
                     Please see the <a href="{FINK_API_URL}" target="_blank">Fink API homepage</a>
                     for a detailed description of this broker.
                 </p>
             """),
-            Fieldset(
-                None,
-                "objectId",
-                "conesearch",
-                "classsearchdate",
-                "ssosearch",
-            ),
+            super().get_layout()
         )
+        return layout
+
+    def simple_fields(self):
+        """Return List of fields to be included in the simple form."""
+        return ['objectId']
 
 
 class FinkDataService(DataService):
@@ -182,20 +173,6 @@ class FinkDataService(DataService):
         Points to the form class discussed below.
         """
         return FinkServiceForm
-
-    def get_simple_form_partial(self):
-        """
-
-        :param self: Description
-        """
-        return 'tom_fink/partials/fink_simple_form.html'
-
-    def get_advanced_form_partial(self):
-        """
-
-        :param self: Description
-        """
-        return 'tom_fink/partials/fink_advanced_form.html'
 
     def build_query_parameters(self, parameters, **kwargs):
         """
@@ -312,7 +289,7 @@ class FinkDataService(DataService):
 
         # NOTE: there's no benefit from creating an Iterator on the data:
         # it's already in memory and there's no lazy-loading here because
-        # the data was already in the reponse
+        # the data was already in the response
 
         return data
 

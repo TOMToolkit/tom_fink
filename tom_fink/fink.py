@@ -160,8 +160,8 @@ class FinkServiceForm(BaseQueryForm):
 
 class FinkDataService(DataService):
     """
-    This is an Example Data Service with the minimum required
-    functionality.
+    Fink Dataservice:
+    Pulls in fink alerts for targets, creating a combined target with data based on each alert.
     """
     name = 'Fink'
     app_version = fink_version
@@ -270,12 +270,13 @@ class FinkDataService(DataService):
                     "stopdate": end,
                 },
             )
-        elif len(parameters["ssosearch"].strip()) > 0:
-            # SSO search
-            response = requests.post(
-                FINK_API_URL + "/api/v1/sso",
-                json={"n_or_d": parameters["ssosearch"].strip(), "columns": SSO_COLUMNS},
-            )
+        # Remove SSO process until proper features added.
+        # elif len(parameters["ssosearch"].strip()) > 0:
+        #     # SSO search
+        #     response = requests.post(
+        #         FINK_API_URL + "/api/v1/sso",
+        #         json={"n_or_d": parameters["ssosearch"].strip(), "columns": SSO_COLUMNS},
+        #     )
         else:
             msg = """
             You need to enter one of the query field! Choose among:
@@ -373,21 +374,17 @@ class FinkDataService(DataService):
 
     def create_target_from_query(self, target_result: Dict[str, Any], **kwargs) -> Target:
         """
-        Create a Target from a selected individual alert. (target w/alert info)
+        Create an unsaved Target from composite results built from selected relevant alerts.
 
-        Selected Table to to (unsaved) Target object + reduced
-
-        :param self: Description
         :param target_result: Dict of Target data for selected Target
         :type target_result: Dict[str, Any]
-        :param kwargs: Description
 
         :return: An unsaved Target instance. Create with constructor; DON'T use `get_or_create()`
         :rtype: Target
         """
 
         # extract values from query target_result and create Target
-        # NOTE: use constructor, not get_or_create, CreateTargetFromQueryView will save the Target
+        # NOTE: use constructor, not get_or_create, the base `to_target` method will save the Target
         unsaved_target = Target(
             name=target_result['name'],
             type='SIDEREAL',
@@ -447,16 +444,18 @@ class FinkDataService(DataService):
     #
 
     def query_photometry(self, query_parameters, **kwargs):
+        """
+        Query data service for photometry data
+
+        Given the query_parameters, there should only be one Target among the Alerts
+        (i.e. all the Alerts are for the same target (the one that was queried for).
+
+        However, just to be sure, we re-organize the List[alert] into a target_name-keyed Dict of target-specific
+        List[alert] (i.e. convert query_results: List[Alert] to alerts_for_target: Dict[target_name, List[alert]])
+        """
         query_results = self.query_service(query_parameters, **kwargs)
         logger.debug(f'query_photometry -- query_results: {query_results}')
 
-        # Given the query_parameters, there should only be one Target among the Alerts
-        # (i.e. all the Alerts are for the same target (the one that was queried for).
-
-        # However, just to be sure, we re-organize:
-
-        # Reorganize the List[alert] into a target_name-keyed Dict of target-specific List[alert]
-        # (i.e. convert query_results: List[Alert] to alerts_for_target: Dict[target_name, List[alert]])
         alerts_for_target: Dict[str, List[Dict[str, Any]]] = {}  # Dict[target_name, List[alert]]
         for alert in query_results:
             target_name = alert['i:objectId']  # will become dict key; value will be List[alert]
@@ -501,7 +500,7 @@ class FinkDataService(DataService):
                 target=target,
                 timestamp=timestamp,
                 data_type=data_type,
-                source_name='Fink',
+                source_name=self.name,
                 value=datum_value
             )
             reduced_datums.append(reduced_datum)

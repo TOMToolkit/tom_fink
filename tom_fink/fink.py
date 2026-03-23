@@ -24,7 +24,7 @@ import warnings
 from django import forms
 
 from tom_dataproducts.models import ReducedDatum
-from tom_dataservices.dataservices import DataService
+from tom_dataservices.dataservices import DataService, QueryServiceError
 from tom_dataservices.forms import BaseQueryForm
 from tom_fink import __version__ as fink_version
 from tom_targets.models import Target
@@ -419,7 +419,7 @@ class FinkDataService(DataService):
             # search among the target's aliases for something that starts with 'ZTF'
             ztf_aliases = target.aliases.filter(name__startswith='ZTF').order_by('-created')
             if not ztf_aliases.exists():
-                raise ValueError(
+                raise QueryServiceError(
                     f"Target '{target.name}' has neither name nor alias starting with 'ZTF'. "
                     f"Cannot build Fink query parameters."
                 )

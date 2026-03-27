@@ -15,11 +15,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-from collections.abc import Iterator
-import functools
 import logging
 from typing import Any, Dict, List
-import warnings
 
 from django import forms
 
@@ -189,7 +186,6 @@ class FinkDataService(DataService):
     info_url = FINK_URL
     base_url = FINK_API_URL + '/api/v1/'
 
-
     @classmethod
     def get_form_class(cls):
         """
@@ -231,7 +227,7 @@ class FinkDataService(DataService):
                       }
         try:
             if form_output["conesearch"].strip():
-                    parameters['ra'], parameters['dec'], parameters['radius'] = form_output["conesearch"].split(",")
+                parameters['ra'], parameters['dec'], parameters['radius'] = form_output["conesearch"].split(",")
             if form_output["classsearch"].strip():
                 parameters['class'], parameters['n'] = form_output["classsearch"].split(",")
             if form_output["classsearchdate"].strip():

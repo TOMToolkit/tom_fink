@@ -30,7 +30,7 @@ class TestFinkDataservice(TestCase):
             'classsearchdate': '',
             'ssosearch': ''}
         with self.assertRaises(QueryServiceError):
-            query_parameters = self.fink_query.build_query_parameters(form_output)
+            self.fink_query.build_query_parameters(form_output)
 
     def test_build_query_parameters_no_query(self):
         form_output = {
@@ -40,7 +40,7 @@ class TestFinkDataservice(TestCase):
             'classsearchdate': '',
             'ssosearch': ''}
         with self.assertRaises(QueryServiceError):
-            query_parameters = self.fink_query.build_query_parameters(form_output)
+            self.fink_query.build_query_parameters(form_output)
 
     def test_build_query_parameters_bad_conesearch(self):
         form_output = {
@@ -50,7 +50,7 @@ class TestFinkDataservice(TestCase):
             'classsearchdate': '',
             'ssosearch': ''}
         with self.assertRaises(QueryServiceError):
-            query_parameters = self.fink_query.build_query_parameters(form_output)
+            self.fink_query.build_query_parameters(form_output)
 
     def test_build_query_parameters_bad_conesearch2(self):
         form_output = {
@@ -60,7 +60,7 @@ class TestFinkDataservice(TestCase):
             'classsearchdate': '',
             'ssosearch': ''}
         with self.assertRaises(QueryServiceError):
-            query_parameters = self.fink_query.build_query_parameters(form_output)
+            self.fink_query.build_query_parameters(form_output)
 
     def test_build_query_parameters_conesearch(self):
         form_output = {

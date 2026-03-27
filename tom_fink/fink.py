@@ -26,7 +26,7 @@ from tom_dataservices.forms import BaseQueryForm
 from tom_fink import __version__ as fink_version
 from tom_targets.models import Target
 
-from astropy.time import Time
+from astropy.time import Time, TimezoneInfo
 from crispy_forms.layout import HTML, Layout
 import markdown as md
 import numpy as np
@@ -486,7 +486,7 @@ class FinkDataService(DataService):
             datum_value['filter'] = filter_names[filter_index]
 
             # convert 'i:jd' (Julian date) to timestamp
-            timestamp = Time(alert['i:jd'], format='jd').to_datetime()
+            timestamp = Time(alert['i:jd'], format='jd', scale='utc').to_datetime(TimezoneInfo())
 
             reduced_datum, _ = ReducedDatum.objects.get_or_create(
                 target=target,

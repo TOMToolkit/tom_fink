@@ -1,6 +1,6 @@
 from django.test import tag, TestCase
 
-from tom_fink.fink import FinkBroker
+# from tom_fink.fink import FinkBroker
 
 
 @tag('canary')

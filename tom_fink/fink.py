@@ -41,7 +41,6 @@ logger = logging.getLogger(__name__)
 FINK_URL = "https://fink-portal.org"
 FINK_API_URL = "https://api.ztf.fink-portal.org"
 FINK_REPO_URL = "https://github.com/TOMToolkit/tom_fink"
-COLUMNS = "i:candid,d:rf_snia_vs_nonia,i:ra,i:dec,i:jd,i:fid,i:magpsf,i:objectId,d:cdsxmatch"
 SSO_COLUMNS = "i:ssnamenr,i:candid,i:ra,i:dec,i:jd,i:magpsf,i:objectId,d:roid"
 
 
@@ -82,6 +81,27 @@ class FinkServiceForm(BaseQueryForm):
         help_text=md.markdown(help_conesearch),
         widget=forms.TextInput(attrs={"placeholder": "RA, Dec, radius"}),
     )
+
+    # ra = forms.CharField(
+    #     required=False,
+    #     label="RA",
+    #     help_text=md.markdown(help_conesearch),
+    # )
+
+    # dec = forms.CharField(
+    #     required=False,
+    #     label="Dec",
+    #     help_text=md.markdown(help_conesearch),
+    # )
+
+    # radius = forms.FloatField(
+    #     required=False,
+    #     label='Search Radius',
+    #     help_text = "Maximum search radius of 60 arcseconds",
+    #     widget=forms.TextInput(attrs={'placeholder': 'radius (arcseconds)'}),
+    #     min_value=0.0,
+    #     max_value=60,
+    # )
 
     help_classsearch = f"""
     Choose a class of interest from {FINK_API_URL}/api/v1/classes
@@ -134,12 +154,12 @@ class FinkServiceForm(BaseQueryForm):
 
     Note for designation, you can also use space (2010 JO69 or C/2020 V2).
     """
-    ssosearch = forms.CharField(
-        required=False,
-        label="Solar System Objects Search",
-        help_text=md.markdown(help_ssosearch),
-        widget=forms.TextInput(attrs={"placeholder": "sso_name"}),
-    )
+    # ssosearch = forms.CharField(
+    #     required=False,
+    #     label="Solar System Objects Search",
+    #     help_text=md.markdown(help_ssosearch),
+    #     widget=forms.TextInput(attrs={"placeholder": "sso_name"}),
+    # )
 
     def get_layout(self):
         layout = Layout(
@@ -166,6 +186,9 @@ class FinkDataService(DataService):
     name = 'Fink'
     app_version = fink_version
     app_link = FINK_REPO_URL
+    info_url = FINK_URL
+    base_url = FINK_API_URL + '/api/v1/'
+
 
     @classmethod
     def get_form_class(cls):
@@ -174,18 +197,59 @@ class FinkDataService(DataService):
         """
         return FinkServiceForm
 
-    def build_query_parameters(self, parameters, **kwargs):
+    def build_query_parameters(self, form_output, **kwargs):
         """
         Use this function to convert the form results into the query parameters understood
         by the Data Service.
         """
-        logger.debug(f'build_query_parameters -- parameters: {parameters}')
+        logger.debug(f'build_query_parameters -- parameters: {form_output}')
 
-        # here, we're just passing the form data straight through to query_targets
+        allowed_search = [
+            "objectId",
+            "conesearch",
+            "classsearch",
+            "classsearchdate",
+            # "ssosearch",  # Disabled until future updates
+        ]
+
+        # first, check that one and only one search field is filled out
+        nquery = np.sum([len(form_output[i].strip()) > 0 for i in allowed_search])
+        if nquery > 1:
+            msg = """
+            You must fill only one query form at a time! Edit your query to choose
+            only one query among: ZTF Object ID, Cone Search, Class Search, Solar System Objects Search
+            """
+            raise QueryServiceError(msg)
+        elif nquery == 0:
+            msg = """
+            You must fill at least one query form! Edit your query to choose
+            one query among: ZTF Object ID, Cone Search, Class Search
+            """
+            raise QueryServiceError(msg)
+
+        parameters = {'objectId': form_output["objectId"].strip(),
+                      }
+        try:
+            if form_output["conesearch"].strip():
+                    parameters['ra'], parameters['dec'], parameters['radius'] = form_output["conesearch"].split(",")
+            if form_output["classsearch"].strip():
+                parameters['class'], parameters['n'] = form_output["classsearch"].split(",")
+            if form_output["classsearchdate"].strip():
+                parameters['class'], n_days_in_past = form_output["classsearchdate"].split(",")
+                now = Time.now()
+                parameters['start'] = Time(now.jd - float(n_days_in_past), format="jd").iso
+                parameters['end'] = now.iso
+        except ValueError as e:
+            msg = f"""
+            It's possible that you included the incorrect number of comma-separated values in the query field.</br>
+            ({e})
+            """
+            raise QueryServiceError(msg)
+
         self.query_parameters = parameters
         return self.query_parameters
 
-    def _fetch_alerts(self, parameters: dict) -> Iterator:
+    def query_service(self, parameters, **kwargs):  # type:ignore
         """Call the Fink API based on parameters from the Query Form.
 
         Parameters
@@ -204,71 +268,30 @@ class FinkDataService(DataService):
             Iterable on alert data (list of dictionary). Alert data is in
             the form {column name: value}.
         """
-        allowed_search = [
-            "objectId",
-            "conesearch",
-            "classsearch",  # at present, not in Form layout (above)
-            "classsearchdate",
-            "ssosearch",
-        ]
+        COLUMNS = "i:candid,d:rf_snia_vs_nonia,i:ra,i:dec,i:jd,i:fid,i:magpsf,i:objectId,d:cdsxmatch"
 
-        # first, check that one and only one search field is filled out
-        nquery = np.sum([len(parameters[i].strip()) > 0 for i in allowed_search])
-        if nquery > 1:
-            msg = """
-            You must fill only one query form at a time! Edit your query to choose
-            only one query among: ZTF Object ID, Cone Search, Class Search, Solar System Objects Search
-            """
-            raise NotImplementedError(msg)
-        elif nquery == 0:
-            msg = """
-            You must fill at least one query form! Edit your query to choose
-            one query among: ZTF Object ID, Cone Search, Class Search, Solar System Objects Search
-            """
-            raise NotImplementedError(msg)
-
-        if len(parameters["objectId"].strip()) > 0:
+        if parameters.get("objectId"):
             # object search
             response = requests.post(
-                FINK_API_URL + "/api/v1/objects",
-                json={"objectId": parameters["objectId"].strip(), "columns": COLUMNS},
+                self.base_url + "objects",
+                json={"objectId": parameters["objectId"], "columns": COLUMNS},
             )
-        elif len(parameters["conesearch"].strip()) > 0:
+        elif parameters.get("ra") and parameters.get("dec") and parameters.get("radius"):
             # cone search
-            try:
-                ra, dec, radius = parameters["conesearch"].split(",")
-            except ValueError:
-                raise
             response = requests.post(
-                FINK_API_URL + "/api/v1/conesearch",
-                json={"ra": ra, "dec": dec, "radius": radius},
+                self.base_url + "conesearch",
+                json={"ra": parameters['ra'], "dec": parameters['dec'], "radius": parameters['radius']},
             )
-        elif len(parameters["classsearch"].strip()) > 0:
+        elif parameters.get("class"):
             # class search (at present, not in Form layout above)
-            try:
-                class_name, n_alert = parameters["classsearch"].split(",")
-            except ValueError:
-                raise
+            json_dict = {"class": parameters['class'],
+                         "n": parameters.get('n', 1000),
+                         }
+            if parameters.get('start') and parameters.get('end'):
+                json_dict["startdate"] = parameters['start']
+                json_dict["stopdate"] = parameters['end']
             response = requests.post(
-                FINK_API_URL + "/api/v1/latests", json={"class": class_name, "n": n_alert}
-            )
-        elif len(parameters["classsearchdate"].strip()) > 0:
-            # class search with n_day_in_past
-            try:
-                class_name, n_days_in_past = parameters["classsearchdate"].split(",")
-            except ValueError:
-                raise
-            now = Time.now()
-            start = Time(now.jd - float(n_days_in_past), format="jd").iso
-            end = now.iso
-            response = requests.post(
-                FINK_API_URL + "/api/v1/latests",
-                json={
-                    "class": class_name,
-                    "n": 1000,
-                    "startdate": start,
-                    "stopdate": end,
-                },
+                self.base_url + "latests", json=json_dict
             )
         # Remove SSO process until proper features added.
         # elif len(parameters["ssosearch"].strip()) > 0:
@@ -283,29 +306,13 @@ class FinkDataService(DataService):
             search by ZTF objectId, conesearch, search by date, search by class,
             search by SSO name.
             """
-            raise NotImplementedError(msg)
+            raise QueryServiceError(msg)
 
         response.raise_for_status()
         data = response.json()
 
-        # NOTE: there's no benefit from creating an Iterator on the data:
-        # it's already in memory and there's no lazy-loading here because
-        # the data was already in the response
-
+        self.query_results = data
         return data
-
-    def query_service(self, query_parameters, **kwargs):  # type:ignore
-        """
-        This is where you actually make the call to the Data Service.
-        Return the results.
-        """
-        logger.debug(f'query_service -- query_parameters: {query_parameters}')
-
-        # _fetch_alerts is refactored from the original FinkBroker
-        alerts = self._fetch_alerts(query_parameters)
-
-        self.query_results = alerts
-        return alerts
 
     #
     # Targets
@@ -429,13 +436,13 @@ class FinkDataService(DataService):
             objectId = ztf_aliases.first().name  # use the most recent ZTF name found
 
         # construct query parameters with objectId filled in and all other search fields empty
-        query_parameters = {
+        query_parameters = self.build_query_parameters({
             'objectId': objectId,
             'conesearch': '',
             'classsearch': '',
             'classsearchdate': '',
-            'ssosearch': '',
-        }
+            # 'ssosearch': '',
+        })
         logger.debug(f'build_query_parameters_from_target -- Target: {target}, query_parameters: {query_parameters}')
         return query_parameters
 
@@ -505,201 +512,3 @@ class FinkDataService(DataService):
             )
             reduced_datums.append(reduced_datum)
         return reduced_datums
-
-
-def deprecated(message):
-    def decorator(cls):
-        orig_init = cls.__init__
-
-        @functools.wraps(orig_init)
-        def new_init(self, *args, **kwargs):
-            warnings.warn(
-                f"{cls.__name__} is deprecated. {message}",
-                DeprecationWarning,
-                stacklevel=2,  # skip over the __init__ and reference the caller
-            )
-            orig_init(self, *args, **kwargs)
-        cls.__init__ = new_init
-        return cls
-    return decorator
-
-from tom_alerts.alerts import GenericBroker, GenericAlert  # noqa
-
-
-@deprecated("Use FinkDataService instead.")
-class FinkBroker(GenericBroker):
-    """
-    The ``FinkBroker`` is the interface to the Fink alert broker.
-
-    For information regarding Fink and its available
-    filters for querying, please see http://134.158.75.151:24000/api
-    """
-
-    name = "Fink"
-    form = FinkServiceForm
-
-    def fetch_alerts(self, parameters: dict) -> iter:
-        """Call the Fink API based on parameters from the Query Form.
-
-        Parameters
-        ----------
-        parameters: dict
-            Dictionary that contains query parameters defined in the Form
-            Example: {
-                'query_name': 'toto',
-                'broker': 'Fink',
-                'objectId': 'ZTF19acnjwgm'
-            }
-
-        Returns
-        -------
-        out: iter
-            Iterable on alert data (list of dictionary). Alert data is in
-            the form {column name: value}.
-        """
-        # Check the user fills only one query form
-        allowed_search = [
-            "objectId",
-            "conesearch",
-            "classsearch",
-            "classsearchdate",
-            "ssosearch",
-        ]
-        nquery = np.sum([len(parameters[i].strip()) > 0 for i in allowed_search])
-        if nquery > 1:
-            msg = """
-            You must fill only one query form at a time! Edit your query to choose
-            only one query among: ZTF Object ID, Cone Search, Class Search, Solar System Objects Search
-            """
-            raise NotImplementedError(msg)
-        elif nquery == 0:
-            msg = """
-            You must fill at least one query form! Edit your query to choose
-            one query among: ZTF Object ID, Cone Search, Class Search, Solar System Objects Search
-            """
-            raise NotImplementedError(msg)
-
-        if len(parameters["objectId"].strip()) > 0:
-            r = requests.post(
-                FINK_API_URL + "/api/v1/objects",
-                json={"objectId": parameters["objectId"].strip(), "columns": COLUMNS},
-            )
-        elif len(parameters["conesearch"].strip()) > 0:
-            try:
-                ra, dec, radius = parameters["conesearch"].split(",")
-            except ValueError:
-                raise
-            r = requests.post(
-                FINK_API_URL + "/api/v1/conesearch",
-                json={"ra": ra, "dec": dec, "radius": radius},
-            )
-        elif len(parameters["classsearch"].strip()) > 0:
-            try:
-                class_name, n_alert = parameters["classsearch"].split(",")
-            except ValueError:
-                raise
-            r = requests.post(
-                FINK_API_URL + "/api/v1/latests", json={"class": class_name, "n": n_alert}
-            )
-        elif len(parameters["classsearchdate"].strip()) > 0:
-            try:
-                class_name, n_days_in_past = parameters["classsearchdate"].split(",")
-            except ValueError:
-                raise
-            now = Time.now()
-            start = Time(now.jd - float(n_days_in_past), format="jd").iso
-            end = now.iso
-            r = requests.post(
-                FINK_API_URL + "/api/v1/latests",
-                json={
-                    "class": class_name,
-                    "n": 1000,
-                    "startdate": start,
-                    "stopdate": end,
-                },
-            )
-        elif len(parameters["ssosearch"].strip()) > 0:
-            r = requests.post(
-                FINK_API_URL + "/api/v1/sso",
-                json={"n_or_d": parameters["ssosearch"].strip(), "columns": SSO_COLUMNS},
-            )
-        else:
-            msg = """
-            You need to enter one of the query field! Choose among:
-            search by ZTF objectId, conesearch, search by date, search by class,
-            search by SSO name.
-            """
-            raise NotImplementedError(msg)
-
-        r.raise_for_status()
-        data = r.json()
-
-        return iter(data)
-
-    def fetch_alert(self, id: str):
-        """Call the Fink API based on parameters from the Query Form.
-
-        Parameters
-        ----------
-        parameters: str
-
-        Returns
-        -------
-        out: iter
-            Iterable on alert data (list of dictionary). Alert data is in
-            the form {column name: value}.
-        """
-        r = requests.post(
-            FINK_API_URL + "/api/v1/objects", json={"objectId": id, "columns": COLUMNS}
-        )
-        r.raise_for_status()
-        data = r.json()
-        return data
-
-    def process_reduced_data(self, target, alert=None):
-        pass
-
-    def to_target(self, alert: dict) -> Target:
-        """Redirect query result to a Target
-
-        Parameters
-        ----------
-        alert: dict
-            GenericAlert instance
-
-        """
-        target = Target.objects.create(
-            name=alert.name,
-            type="SIDEREAL",
-            ra=alert.ra,
-            dec=alert.dec,
-        )
-        return target
-
-    def to_generic_alert(self, alert):
-        """Extract relevant parameters from the Fink alert to the TOM interface
-
-        Parameters
-        ----------
-        alert: dict
-            Dictionary containing alert data: {column name: value}. See
-            `self.fetch_alerts` for more information.
-
-        Returns
-        -------
-        out: GenericAlert
-            Alert columns to be displayed on the TOM interface
-        """
-        # This URL points to the objectId page in the Fink Science Portal
-        url = "{}/{}".format(FINK_URL, alert["i:objectId"])
-
-        return GenericAlert(
-            timestamp=alert["i:jd"],
-            id=alert["i:candid"],
-            url=url,
-            name=alert["i:objectId"],
-            ra=alert["i:ra"],
-            dec=alert["i:dec"],
-            mag=alert["i:magpsf"],
-            score=alert.get("d:rf_snia_vs_nonia", 0),
-        )

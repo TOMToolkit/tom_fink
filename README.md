@@ -9,6 +9,17 @@ This repository hosts the Fink Alert Broker Module for the TOM Toolkit. Fink is 
 ```bash
 pip install tom-fink
 ```
+Then add the `tom_fink` app to your list of `INSTALLED_APPS` in `settings.py`:
+
+```python
+INSTALLED_APPS = [
+    ...
+    'custom_code',
+    'tom_fink'
+]
+```
+
+This should give you access to the Dataservice UI.
 
 ## Polling data from the REST API
 
@@ -16,23 +27,8 @@ As of `tom-fink` version 0.4, the module simply uses the [Fink REST API](https:/
 - Search by ZTF object ID
 - Cone Search
 - Search by derived alert class
-- Search by Solar System name
+- Search by Solar System name (currently disabled)
 
-You need to declare the `FinkBroker` class in your running TOM instance. To do so just add `tom_fink.fink.FinkBroker` to the `TOM_ALERT_CLASSES` in your TOM's `settings.py`:
-
-```python
-TOM_ALERT_CLASSES = [
-  'tom_alerts.brokers.alerce.ALeRCEBroker',
-  ...,
-  'tom_fink.fink.FinkBroker'
-]
-```
-
-and finally relaunch your TOM:
-
-```bash
-./manage.py runserver
-```
 
 ## Polling data from the Fink livestream service
 
@@ -41,6 +37,7 @@ Alternatively from `tom_fink` version 0.6.0, users can poll Fink substreams in r
 ```python
 INSTALLED_APPS = [
     ...
+    'custom_code',
     'tom_alertstreams',
     'tom_fink'
 ]
@@ -139,6 +136,12 @@ export FINK_TIMEOUT=10
 ```
 
 This way, you will poll alerts two-by-two, and you will have a reservoir of thousands of alerts (solar system objects)!
+
+## Running the tests for the app
+
+In order to run the tests, run the following in your virtualenv:
+
+`python tom_fink/tests/run_tests.py`
 
 ## Todo list
 

@@ -38,7 +38,7 @@ import requests
 logger = logging.getLogger(__name__)
 # logger.setLevel(logging.DEBUG)
 
-FINK_URL = "https://fink-portal.org"
+FINK_URL = "https://fink-broker.org/"
 FINK_API_URL = "https://api.ztf.fink-portal.org"
 FINK_REPO_URL = "https://github.com/TOMToolkit/tom_fink"
 SSO_COLUMNS = "i:ssnamenr,i:candid,i:ra,i:dec,i:jd,i:magpsf,i:objectId,d:roid"
@@ -193,14 +193,14 @@ class FinkDataService(DataService):
     @classmethod
     def get_form_class(cls):
         """
-        Points to the form class discussed below.
+        Points to the form class.
         """
         return FinkServiceForm
 
     def build_query_parameters(self, form_output, **kwargs):
         """
         Use this function to convert the form results into the query parameters understood
-        by the Data Service.
+        by query_service.
         """
         logger.debug(f'build_query_parameters -- parameters: {form_output}')
 
@@ -256,11 +256,7 @@ class FinkDataService(DataService):
         ----------
         parameters: dict
             Dictionary that contains query parameters defined in the Form
-            Example: {
-                'query_name': 'toto',
-                'broker': 'Fink',
-                'objectId': 'ZTF19acnjwgm'
-            }
+            Possible key/combinations: [objectId], [ra, dec, radius], [class, n, (start, end)]
 
         Returns
         -------
@@ -403,11 +399,7 @@ class FinkDataService(DataService):
     def build_query_parameters_from_target(self, target, **kwargs) -> Dict[str, Any]:
         """
         This is a method that builds query parameters based on an existing target object that will be
-        recognized by `query_service()`.
-
-        This can be done by either by re-creating the form fields set by the Data Service Form and
-        then calling `self.build_query_parameters()` with the results, or we can reproduce a limited
-        set of parameters uniquely for a target query.
+        recognized by `query_service()`..
 
         In this particular case, we're looking for something that begins with ZTF: It could be the
         target name or it could be an alias.
@@ -435,14 +427,8 @@ class FinkDataService(DataService):
                 )
             objectId = ztf_aliases.first().name  # use the most recent ZTF name found
 
-        # construct query parameters with objectId filled in and all other search fields empty
-        query_parameters = self.build_query_parameters({
-            'objectId': objectId,
-            'conesearch': '',
-            'classsearch': '',
-            'classsearchdate': '',
-            # 'ssosearch': '',
-        })
+        # construct query parameters with objectId
+        query_parameters = {'objectId': objectId}
         logger.debug(f'build_query_parameters_from_target -- Target: {target}, query_parameters: {query_parameters}')
         return query_parameters
 

@@ -266,7 +266,7 @@ class FinkDataService(DataService):
             # object search
             response = requests.post(
                 self.base_url + "objects",
-                json={"objectId": parameters["objectId"], "columns": COLUMNS},
+                json={"objectId": parameters["objectId"], "columns": COLUMNS}, timeout=60
             )
         elif parameters.get("ra") and parameters.get("dec") and parameters.get("radius"):
             # cone search
@@ -454,11 +454,12 @@ class FinkDataService(DataService):
             alerts_for_target[target_name] = alerts
 
         # There should only one key,value pair in alert_for_target (i.e. only one target with it's alerts)
-        assert len(alerts_for_target.items()) == 1
+        if len(alerts_for_target.items()) != 1:
+            raise QueryServiceError(f'Too many targets returned from {self.name}')
 
         return query_results
 
-    def create_reduced_datums_from_query(self, target, data=[], data_type='photometry', **kwargs):
+    def create_reduced_datums_from_query(self, target, data=None, data_type='photometry', **kwargs):
         """Create Photometry reduced_data instances from `data`. `data` is a List[alert]
         (the alerts returned by Fink).
 
@@ -470,6 +471,8 @@ class FinkDataService(DataService):
 
         """
         logger.debug(f'create_reduced_datums_from_query -- data:{type(data)} => {data}')
+        if data is None:
+            data = []
 
         reduced_datums = []
         for alert in data:

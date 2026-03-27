@@ -14,24 +14,34 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
-from tom_alerts.alerts import GenericAlert, GenericBroker, GenericQueryForm
-from tom_targets.models import Target
-from tom_fink import __version__ as fink_version
+
+import logging
+from typing import Any, Dict, List
 
 from django import forms
-from crispy_forms.layout import Fieldset, HTML, Layout
-import requests
+
+from tom_dataproducts.models import ReducedDatum
+from tom_dataservices.dataservices import DataService, QueryServiceError
+from tom_dataservices.forms import BaseQueryForm
+from tom_fink import __version__ as fink_version
+from tom_targets.models import Target
+
+from astropy.time import Time
+from crispy_forms.layout import HTML, Layout
 import markdown as md
 import numpy as np
-from astropy.time import Time
+import requests
 
-FINK_URL = "https://fink-portal.org"
-FINK_API_URL = "https://api.fink-portal.org"
-COLUMNS = "i:candid,d:rf_snia_vs_nonia,i:ra,i:dec,i:jd,i:magpsf,i:objectId,d:cdsxmatch"
+logger = logging.getLogger(__name__)
+# logger.setLevel(logging.DEBUG)
+
+FINK_URL = "https://fink-broker.org/"
+FINK_API_URL = "https://api.ztf.fink-portal.org"
+FINK_REPO_URL = "https://github.com/TOMToolkit/tom_fink"
 SSO_COLUMNS = "i:ssnamenr,i:candid,i:ra,i:dec,i:jd,i:magpsf,i:objectId,d:roid"
 
 
-class FinkQueryForm(GenericQueryForm):
+class FinkServiceForm(BaseQueryForm):
     """Class to organise the Query Form for Fink.
 
     It currently contains forms for
@@ -68,6 +78,27 @@ class FinkQueryForm(GenericQueryForm):
         help_text=md.markdown(help_conesearch),
         widget=forms.TextInput(attrs={"placeholder": "RA, Dec, radius"}),
     )
+
+    # ra = forms.CharField(
+    #     required=False,
+    #     label="RA",
+    #     help_text=md.markdown(help_conesearch),
+    # )
+
+    # dec = forms.CharField(
+    #     required=False,
+    #     label="Dec",
+    #     help_text=md.markdown(help_conesearch),
+    # )
+
+    # radius = forms.FloatField(
+    #     required=False,
+    #     label='Search Radius',
+    #     help_text = "Maximum search radius of 60 arcseconds",
+    #     widget=forms.TextInput(attrs={'placeholder': 'radius (arcseconds)'}),
+    #     min_value=0.0,
+    #     max_value=60,
+    # )
 
     help_classsearch = f"""
     Choose a class of interest from {FINK_API_URL}/api/v1/classes
@@ -120,63 +151,108 @@ class FinkQueryForm(GenericQueryForm):
 
     Note for designation, you can also use space (2010 JO69 or C/2020 V2).
     """
-    ssosearch = forms.CharField(
-        required=False,
-        label="Solar System Objects Search",
-        help_text=md.markdown(help_ssosearch),
-        widget=forms.TextInput(attrs={"placeholder": "sso_name"}),
-    )
+    # ssosearch = forms.CharField(
+    #     required=False,
+    #     label="Solar System Objects Search",
+    #     help_text=md.markdown(help_ssosearch),
+    #     widget=forms.TextInput(attrs={"placeholder": "sso_name"}),
+    # )
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.helper.layout = Layout(
+    def get_layout(self):
+        layout = Layout(
             HTML(f"""
-                <p>
-                    <em>
-                    TOM Toolkit Broker Module
-                    (<a target="_blank" href="https://github.com/TOMToolkit/tom_fink">tom_fink</a>)
-                    version {fink_version}
-                    </em>
-                </p>
                 <p>
                     Please see the <a href="{FINK_API_URL}" target="_blank">Fink API homepage</a>
                     for a detailed description of this broker.
                 </p>
             """),
-            self.common_layout,
-            Fieldset(
-                None,
-                "objectId",
-                "conesearch",
-                "classsearchdate",
-                "ssosearch",
-            ),
+            super().get_layout()
         )
+        return layout
+
+    def simple_fields(self):
+        """Return List of fields to be included in the simple form."""
+        return ['objectId']
 
 
-class FinkBroker(GenericBroker):
+class FinkDataService(DataService):
     """
-    The ``FinkBroker`` is the interface to the Fink alert broker.
-
-    For information regarding Fink and its available
-    filters for querying, please see http://134.158.75.151:24000/api
+    Fink Dataservice:
+    Pulls in fink alerts for targets, creating a combined target with data based on each alert.
     """
+    name = 'Fink'
+    app_version = fink_version
+    app_link = FINK_REPO_URL
+    info_url = FINK_URL
+    base_url = FINK_API_URL + '/api/v1/'
 
-    name = "Fink"
-    form = FinkQueryForm
+    @classmethod
+    def get_form_class(cls):
+        """
+        Points to the form class.
+        """
+        return FinkServiceForm
 
-    def fetch_alerts(self, parameters: dict) -> iter:
+    def build_query_parameters(self, form_output, **kwargs):
+        """
+        Use this function to convert the form results into the query parameters understood
+        by query_service.
+        """
+        logger.debug(f'build_query_parameters -- parameters: {form_output}')
+
+        allowed_search = [
+            "objectId",
+            "conesearch",
+            "classsearch",
+            "classsearchdate",
+            # "ssosearch",  # Disabled until future updates
+        ]
+
+        # first, check that one and only one search field is filled out
+        nquery = np.sum([len(form_output[i].strip()) > 0 for i in allowed_search])
+        if nquery > 1:
+            msg = """
+            You must fill only one query form at a time! Edit your query to choose
+            only one query among: ZTF Object ID, Cone Search, Class Search, Solar System Objects Search
+            """
+            raise QueryServiceError(msg)
+        elif nquery == 0:
+            msg = """
+            You must fill at least one query form! Edit your query to choose
+            one query among: ZTF Object ID, Cone Search, Class Search
+            """
+            raise QueryServiceError(msg)
+
+        parameters = {'objectId': form_output["objectId"].strip(),
+                      }
+        try:
+            if form_output["conesearch"].strip():
+                parameters['ra'], parameters['dec'], parameters['radius'] = form_output["conesearch"].split(",")
+            if form_output["classsearch"].strip():
+                parameters['class'], parameters['n'] = form_output["classsearch"].split(",")
+            if form_output["classsearchdate"].strip():
+                parameters['class'], n_days_in_past = form_output["classsearchdate"].split(",")
+                now = Time.now()
+                parameters['start'] = Time(now.jd - float(n_days_in_past), format="jd").iso
+                parameters['end'] = now.iso
+        except ValueError as e:
+            msg = f"""
+            It's possible that you included the incorrect number of comma-separated values in the query field.</br>
+            ({e})
+            """
+            raise QueryServiceError(msg)
+
+        self.query_parameters = parameters
+        return self.query_parameters
+
+    def query_service(self, parameters, **kwargs):  # type:ignore
         """Call the Fink API based on parameters from the Query Form.
 
         Parameters
         ----------
         parameters: dict
             Dictionary that contains query parameters defined in the Form
-            Example: {
-                'query_name': 'toto',
-                'broker': 'Fink',
-                'objectId': 'ZTF19acnjwgm'
-            }
+            Possible key/combinations: [objectId], [ra, dec, radius], [class, n, (start, end)]
 
         Returns
         -------
@@ -184,149 +260,237 @@ class FinkBroker(GenericBroker):
             Iterable on alert data (list of dictionary). Alert data is in
             the form {column name: value}.
         """
-        # Check the user fills only one query form
-        allowed_search = [
-            "objectId",
-            "conesearch",
-            "classsearch",
-            "classsearchdate",
-            "ssosearch",
-        ]
-        nquery = np.sum([len(parameters[i].strip()) > 0 for i in allowed_search])
-        if nquery > 1:
-            msg = """
-            You must fill only one query form at a time! Edit your query to choose
-            only one query among: ZTF Object ID, Cone Search, Class Search, Solar System Objects Search
-            """
-            raise NotImplementedError(msg)
-        elif nquery == 0:
-            msg = """
-            You must fill at least one query form! Edit your query to choose
-            one query among: ZTF Object ID, Cone Search, Class Search, Solar System Objects Search
-            """
-            raise NotImplementedError(msg)
+        COLUMNS = "i:candid,d:rf_snia_vs_nonia,i:ra,i:dec,i:jd,i:fid,i:magpsf,i:objectId,d:cdsxmatch"
 
-        if len(parameters["objectId"].strip()) > 0:
-            r = requests.post(
-                FINK_API_URL + "/api/v1/objects",
-                json={"objectId": parameters["objectId"].strip(), "columns": COLUMNS},
+        if parameters.get("objectId"):
+            # object search
+            response = requests.post(
+                self.base_url + "objects",
+                json={"objectId": parameters["objectId"], "columns": COLUMNS},
             )
-        elif len(parameters["conesearch"].strip()) > 0:
-            try:
-                ra, dec, radius = parameters["conesearch"].split(",")
-            except ValueError:
-                raise
-            r = requests.post(
-                FINK_API_URL + "/api/v1/conesearch",
-                json={"ra": ra, "dec": dec, "radius": radius},
+        elif parameters.get("ra") and parameters.get("dec") and parameters.get("radius"):
+            # cone search
+            response = requests.post(
+                self.base_url + "conesearch",
+                json={"ra": parameters['ra'], "dec": parameters['dec'], "radius": parameters['radius']},
             )
-        elif len(parameters["classsearch"].strip()) > 0:
-            try:
-                class_name, n_alert = parameters["classsearch"].split(",")
-            except ValueError:
-                raise
-            r = requests.post(
-                FINK_API_URL + "/api/v1/latests", json={"class": class_name, "n": n_alert}
+        elif parameters.get("class"):
+            # class search (at present, not in Form layout above)
+            json_dict = {"class": parameters['class'],
+                         "n": parameters.get('n', 1000),
+                         }
+            if parameters.get('start') and parameters.get('end'):
+                json_dict["startdate"] = parameters['start']
+                json_dict["stopdate"] = parameters['end']
+            response = requests.post(
+                self.base_url + "latests", json=json_dict
             )
-        elif len(parameters["classsearchdate"].strip()) > 0:
-            try:
-                class_name, n_days_in_past = parameters["classsearchdate"].split(",")
-            except ValueError:
-                raise
-            now = Time.now()
-            start = Time(now.jd - float(n_days_in_past), format="jd").iso
-            end = now.iso
-            r = requests.post(
-                FINK_API_URL + "/api/v1/latests",
-                json={
-                    "class": class_name,
-                    "n": 1000,
-                    "startdate": start,
-                    "stopdate": end,
-                },
-            )
-        elif len(parameters["ssosearch"].strip()) > 0:
-            r = requests.post(
-                FINK_API_URL + "/api/v1/sso",
-                json={"n_or_d": parameters["ssosearch"].strip(), "columns": SSO_COLUMNS},
-            )
+        # Remove SSO process until proper features added.
+        # elif len(parameters["ssosearch"].strip()) > 0:
+        #     # SSO search
+        #     response = requests.post(
+        #         FINK_API_URL + "/api/v1/sso",
+        #         json={"n_or_d": parameters["ssosearch"].strip(), "columns": SSO_COLUMNS},
+        #     )
         else:
             msg = """
             You need to enter one of the query field! Choose among:
             search by ZTF objectId, conesearch, search by date, search by class,
             search by SSO name.
             """
-            raise NotImplementedError(msg)
+            raise QueryServiceError(msg)
 
-        r.raise_for_status()
-        data = r.json()
+        response.raise_for_status()
+        data = response.json()
 
-        return iter(data)
-
-    def fetch_alert(self, id: str):
-        """Call the Fink API based on parameters from the Query Form.
-
-        Parameters
-        ----------
-        parameters: str
-
-        Returns
-        -------
-        out: iter
-            Iterable on alert data (list of dictionary). Alert data is in
-            the form {column name: value}.
-        """
-        r = requests.post(
-            FINK_API_URL + "/api/v1/objects", json={"objectId": id, "columns": COLUMNS}
-        )
-        r.raise_for_status()
-        data = r.json()
+        self.query_results = data
         return data
 
-    def process_reduced_data(self, target, alert=None):
-        pass
+    #
+    # Targets
+    #
 
-    def to_target(self, alert: dict) -> Target:
-        """Redirect query result to a Target
+    def query_targets(self, query_parameters, **kwargs) -> List[Dict[str, Any]]:
+        """Return a List[Dict] of Target data. Each List element becomes a row in the
+        selectable target create table. Each Dict item becomes a column in the table.
 
-        Parameters
-        ----------
-        alert: dict
-            GenericAlert instance
+        :param query_parameters: The query_parameters returned by `build_query_parameters`
+        :type query_parameters: Dict[str, str]
+
+        Here's is an example of a single alert from an Object query
+        alerts[0]: {
+           'i:objectId': 'ZTF18abzktuy',
+           'i:ra': 92.5117956
+           'i:dec': 36.1095938,
+           'i:jd': 2461051.7947569,
+           'i:magpsf': 18.068764,
+           'd:cdsxmatch': 'EclBin',
+           'd:rf_snia_vs_nonia': 0.0,
+           'i:candid': 3297294755815010006,
+        }
 
         """
-        target = Target.objects.create(
-            name=alert.name,
-            type="SIDEREAL",
-            ra=alert.ra,
-            dec=alert.dec,
-        )
-        return target
+        logger.debug(f'query_targets -- query_parameters: {query_parameters}')
 
-    def to_generic_alert(self, alert):
-        """Extract relevant parameters from the Fink alert to the TOM interface
+        # query Fink via query_service,
+        query_results = self.query_service(query_parameters, **kwargs)
+        logger.debug(f'query_targets -- query_results: {query_results}')
 
-        Parameters
-        ----------
-        alert: dict
-            Dictionary containing alert data: {column name: value}. See
-            `self.fetch_alerts` for more information.
+        # Reorganize the List[alert] into a target_name-keyed Dict of target-specific List[alert]
+        # (i.e. convert query_results: List[Alert] to alerts_for_target: Dict[target_name, List[alert]])
+        alerts_for_target: Dict[str, List[Dict[str, Any]]] = {}  # Dict[target_name, List[alert]]
+        for alert in query_results:
+            target_name = alert['i:objectId']  # will become dict key; value will be List[alert]
 
-        Returns
-        -------
-        out: GenericAlert
-            Alert columns to be displayed on the TOM interface
+            alerts = alerts_for_target.get(target_name, [])  # get (or create) the list of alerts for this target_name
+            alerts.append(alert)
+            alerts_for_target[target_name] = alerts
+
+        # Create the List of targets to be offered to the User for actual Target creation.
+        targets_for_selection_table = []
+        for target_name, alerts in alerts_for_target.items():
+            # each alert in the alerts: List[alert] may have slightly different values,
+            # so derive values suitable for the selection table
+            median_ra = float(np.median([alert['i:ra'] for alert in alerts]))
+            median_dec = float(np.median([alert['i:dec'] for alert in alerts]))
+            median_mag = float(np.median([alert['i:magpsf'] for alert in alerts]))
+            jd_min = float(np.min([alert['i:jd'] for alert in alerts]))
+            jd_max = float(np.max([alert['i:jd'] for alert in alerts]))
+            # now create the dict whose fields appear as columns in the Target selection table row
+            target_table_row = {
+                'name': target_name,
+                'ra': median_ra,
+                'dec': median_dec,
+                'mag': median_mag,
+                'jd_min': jd_min,
+                'jd_max': jd_max,
+                'num_alerts': len(alerts),
+                'reduced_datums': {'photometry': alerts}
+            }
+            targets_for_selection_table.append(target_table_row)
+
+        return targets_for_selection_table
+
+    def create_target_from_query(self, target_result: Dict[str, Any], **kwargs) -> Target:
         """
-        # This URL points to the objectId page in the Fink Science Portal
-        url = "{}/{}".format(FINK_URL, alert["i:objectId"])
+        Create an unsaved Target from composite results built from selected relevant alerts.
 
-        return GenericAlert(
-            timestamp=alert["i:jd"],
-            id=alert["i:candid"],
-            url=url,
-            name=alert["i:objectId"],
-            ra=alert["i:ra"],
-            dec=alert["i:dec"],
-            mag=alert["i:magpsf"],
-            score=alert.get("d:rf_snia_vs_nonia", 0),
+        :param target_result: Dict of Target data for selected Target
+        :type target_result: Dict[str, Any]
+
+        :return: An unsaved Target instance. Create with constructor; DON'T use `get_or_create()`
+        :rtype: Target
+        """
+
+        # extract values from query target_result and create Target
+        # NOTE: use constructor, not get_or_create, the base `to_target` method will save the Target
+        unsaved_target = Target(
+            name=target_result['name'],
+            type='SIDEREAL',
+            ra=target_result['ra'],
+            dec=target_result['dec'],
         )
+        return unsaved_target
+
+    def build_query_parameters_from_target(self, target, **kwargs) -> Dict[str, Any]:
+        """
+        This is a method that builds query parameters based on an existing target object that will be
+        recognized by `query_service()`..
+
+        In this particular case, we're looking for something that begins with ZTF: It could be the
+        target name or it could be an alias.
+
+        :param target: A target object to be queried
+        :return: query_parameters (usually a dict) that can be understood by `query_service()`
+        """
+        # first, see if the target.name itself is a ZTF object ID.
+        if target.name.startswith('ZTF'):
+            objectId = target.name
+        else:
+            # if it's not,
+            # search among the target's aliases for something that starts with 'ZTF'
+            ztf_aliases = target.aliases.filter(name__startswith='ZTF').order_by('-created')
+            if not ztf_aliases.exists():
+                raise QueryServiceError(
+                    f"Target '{target.name}' has neither name nor alias starting with 'ZTF'. "
+                    f"Cannot build Fink query parameters."
+                )
+            if ztf_aliases.count() > 1:
+                logger.warning(
+                    f"Target '{target.name}' has multiple ZTF aliases: "
+                    f"{list(ztf_aliases.values_list('name', flat=True))}. "
+                    f"Using the most recent: '{ztf_aliases.first().name}'."
+                )
+            objectId = ztf_aliases.first().name  # use the most recent ZTF name found
+
+        # construct query parameters with objectId
+        query_parameters = {'objectId': objectId}
+        logger.debug(f'build_query_parameters_from_target -- Target: {target}, query_parameters: {query_parameters}')
+        return query_parameters
+
+    #
+    # Photometry
+    #
+
+    def query_photometry(self, query_parameters, **kwargs):
+        """
+        Query data service for photometry data
+
+        Given the query_parameters, there should only be one Target among the Alerts
+        (i.e. all the Alerts are for the same target (the one that was queried for).
+
+        However, just to be sure, we re-organize the List[alert] into a target_name-keyed Dict of target-specific
+        List[alert] (i.e. convert query_results: List[Alert] to alerts_for_target: Dict[target_name, List[alert]])
+        """
+        query_results = self.query_service(query_parameters, **kwargs)
+        logger.debug(f'query_photometry -- query_results: {query_results}')
+
+        alerts_for_target: Dict[str, List[Dict[str, Any]]] = {}  # Dict[target_name, List[alert]]
+        for alert in query_results:
+            target_name = alert['i:objectId']  # will become dict key; value will be List[alert]
+
+            alerts = alerts_for_target.get(target_name, [])  # get (or create) the list of alerts for this target_name
+            alerts.append(alert)
+            alerts_for_target[target_name] = alerts
+
+        # There should only one key,value pair in alert_for_target (i.e. only one target with it's alerts)
+        assert len(alerts_for_target.items()) == 1
+
+        return query_results
+
+    def create_reduced_datums_from_query(self, target, data=[], data_type='photometry', **kwargs):
+        """Create Photometry reduced_data instances from `data`. `data` is a List[alert]
+        (the alerts returned by Fink).
+
+        :param target: The Target these data pertain to.
+        :type target: tom_targets.models.Target
+        :param data: This is a list of alert dictionaries for the target. This is the
+        reduced_datums['photometry'] List[alert] constructed in query_targets.
+        :type data: List[Dict[str, Any]]
+
+        """
+        logger.debug(f'create_reduced_datums_from_query -- data:{type(data)} => {data}')
+
+        reduced_datums = []
+        for alert in data:
+            datum_value = alert  # include the raw alert items in the value dict
+            datum_value['magnitude'] = alert['i:magpsf']  # and add the expected item(s)
+            datum_value['error'] = 0.0
+
+            # convert filter ID to filter (1=g; 2=R; 3=i)
+            filter_index = alert['i:fid'] - 1
+            filter_names = ['g', 'R', 'i']
+            datum_value['filter'] = filter_names[filter_index]
+
+            # convert 'i:jd' (Julian date) to timestamp
+            timestamp = Time(alert['i:jd'], format='jd').to_datetime()
+
+            reduced_datum, _ = ReducedDatum.objects.get_or_create(
+                target=target,
+                timestamp=timestamp,
+                data_type=data_type,
+                source_name=self.name,
+                value=datum_value
+            )
+            reduced_datums.append(reduced_datum)
+        return reduced_datums

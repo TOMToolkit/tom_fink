@@ -20,7 +20,7 @@ from typing import Any, Dict, List
 
 from django import forms
 
-from tom_dataproducts.models import ReducedDatum
+from tom_dataproducts.models import PhotometryReducedDatum
 from tom_dataservices.dataservices import DataService, QueryServiceError
 from tom_dataservices.forms import BaseQueryForm
 from tom_fink import __version__ as fink_version
@@ -488,12 +488,14 @@ class FinkDataService(DataService):
             # convert 'i:jd' (Julian date) to timestamp
             timestamp = Time(alert['i:jd'], format='jd', scale='utc').to_datetime(TimezoneInfo())
 
-            reduced_datum, _ = ReducedDatum.objects.get_or_create(
+            reduced_datum, _ = PhotometryReducedDatum.objects.get_or_create(
                 target=target,
                 timestamp=timestamp,
-                data_type=data_type,
                 source_name=self.name,
-                value=datum_value
+                value=datum_value,
+                brightness=datum_value['magnitude'],
+                brightness_error=datum_value['error'],
+                bandpass=datum_value['filter'],
             )
             reduced_datums.append(reduced_datum)
         return reduced_datums

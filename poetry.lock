@@ -1110,16 +1110,16 @@ requests = ">=1.0.0"
 yaml = ["PyYAML (>=3.10)"]
 
 [[package]]
-name = "crispy-bootstrap4"
-version = "2024.10"
-description = "Bootstrap4 template pack for django-crispy-forms"
+name = "crispy-bootstrap5"
+version = "2026.3"
+description = "Bootstrap5 template pack for django-crispy-forms"
 optional = false
-python-versions = ">=3.8"
+python-versions = ">=3.9"
 groups = ["main"]
 markers = "sys_platform == \"win32\" or sys_platform == \"emscripten\" or sys_platform != \"win32\" and sys_platform != \"emscripten\""
 files = [
-    {file = "crispy-bootstrap4-2024.10.tar.gz", hash = "sha256:503e8922b0f3b5262a6fdf303a3a94eb2a07514812f1ca130b88f7c02dd25e2b"},
-    {file = "crispy_bootstrap4-2024.10-py3-none-any.whl", hash = "sha256:138a97884044ae4c4799c80595b36c42066e4e933431e2e971611e251c84f96c"},
+    {file = "crispy_bootstrap5-2026.3-py3-none-any.whl", hash = "sha256:e0fff85c0503e9aed610a0ee31368e2191d340657f813669491c288c1c2e2dfa"},
+    {file = "crispy_bootstrap5-2026.3.tar.gz", hash = "sha256:e7f5adb36acfbb456444c46e82c436931c796c539e9c620be4fa9dc9c9d6679c"},
 ]
 
 [package.dependencies]
@@ -1253,21 +1253,23 @@ argon2 = ["argon2-cffi (>=19.1.0)"]
 bcrypt = ["bcrypt"]
 
 [[package]]
-name = "django-bootstrap4"
-version = "24.4"
-description = "Bootstrap 4 for Django"
+name = "django-bootstrap5"
+version = "26.2"
+description = "Bootstrap 5 for Django"
 optional = false
-python-versions = ">=3.8"
+python-versions = ">=3.10"
 groups = ["main"]
 markers = "sys_platform == \"win32\" or sys_platform == \"emscripten\" or sys_platform != \"win32\" and sys_platform != \"emscripten\""
 files = [
-    {file = "django_bootstrap4-24.4-py3-none-any.whl", hash = "sha256:90f642d8c9a6622694544a4fdbf8e6734a037b33b5d6b2884cfd79c87c5d610f"},
-    {file = "django_bootstrap4-24.4.tar.gz", hash = "sha256:b6147eeaa534057f866962d50bcf506b3d378720340d7a8243494a6e33f4e23e"},
+    {file = "django_bootstrap5-26.2-py3-none-any.whl", hash = "sha256:179af37c59f4e9b1070fc650f30961c5d903c2c0ad60280ad5b63ed394f68658"},
+    {file = "django_bootstrap5-26.2.tar.gz", hash = "sha256:12331059c8230ba372ffaad990a706151e1ad8f721a870aa2e862cf6746f0d33"},
 ]
 
 [package.dependencies]
-beautifulsoup4 = ">=4.10.0"
-Django = ">=4.2"
+django = ">=4.2"
+
+[package.extras]
+jinja = ["jinja2 (>=3.0,<4)"]
 
 [[package]]
 name = "django-contrib-comments"
@@ -1398,15 +1400,15 @@ typing-extensions = "*"
 
 [[package]]
 name = "django-tables2"
-version = "2.8.0"
+version = "3.0.0"
 description = "Table/data-grid framework for Django"
 optional = false
-python-versions = ">=3.9"
+python-versions = ">=3.10"
 groups = ["main"]
 markers = "sys_platform == \"win32\" or sys_platform == \"emscripten\" or sys_platform != \"win32\" and sys_platform != \"emscripten\""
 files = [
-    {file = "django_tables2-2.8.0-py3-none-any.whl", hash = "sha256:860633b0f448216af73fca6005c7e38dc9b46931dc36c08a9281a71ee250b1ee"},
-    {file = "django_tables2-2.8.0.tar.gz", hash = "sha256:0dea3401bb99a0164ba09e20d59a7d90856fdc05e5ae2da9a14d0fa14d99257c"},
+    {file = "django_tables2-3.0.0-py3-none-any.whl", hash = "sha256:2a5b5447f10d7a8cfb7a2e8f0b139d969c7eb2e675079a4b8ba0107956345bfa"},
+    {file = "django_tables2-3.0.0.tar.gz", hash = "sha256:3c5343f72663b0d6684e8e6cbcb16caae10d7621a51c1cf3c581f57ce605f8ee"},
 ]
 
 [package.dependencies]
@@ -1660,15 +1662,15 @@ zstandard = ["zstandard"]
 
 [[package]]
 name = "fink-client"
-version = "8.10"
+version = "11.0"
 description = "Light-weight client to manipulate alerts from Fink"
 optional = false
 python-versions = "*"
 groups = ["main"]
 markers = "sys_platform == \"win32\" or sys_platform == \"emscripten\" or sys_platform != \"win32\" and sys_platform != \"emscripten\""
 files = [
-    {file = "fink-client-8.10.tar.gz", hash = "sha256:bc74eadbf57032ebe11e00e1e73921620dc3c1b7b2e34b1c48f1c2d23fba939e"},
-    {file = "fink_client-8.10-py3-none-any.whl", hash = "sha256:cd8c1056eeb50663433a5bae77281bf687a5a0f8616e69d48df4784a367d8069"},
+    {file = "fink_client-11.0-py3-none-any.whl", hash = "sha256:e5a2a6f10bf567906f5d6e9b28181862d1c3a3b45d64a7de3d4534d0b2affc81"},
+    {file = "fink_client-11.0.tar.gz", hash = "sha256:8ca6cbf903f0aea00c0193f0d1b7ea3e60662132e598713266b2a19c683a9adc"},
 ]
 
 [package.dependencies]
@@ -1676,7 +1678,7 @@ astropy = "*"
 confluent-kafka = "*"
 coverage = "*"
 coveralls = "*"
-fastavro = "1.9.4"
+fastavro = ">=1.9.4,<2.0.0"
 matplotlib = "*"
 numpy = "*"
 pandas = "*"
@@ -3897,27 +3899,27 @@ files = [
 
 [[package]]
 name = "tomtoolkit"
-version = "3.0.0a2"
+version = "3.0.0a10"
 description = "TOM Toolkit and base modules"
 optional = false
 python-versions = "<3.14,>=3.10.0"
 groups = ["main"]
 markers = "sys_platform == \"win32\" or sys_platform == \"emscripten\" or sys_platform != \"win32\" and sys_platform != \"emscripten\""
 files = [
-    {file = "tomtoolkit-3.0.0a2-py3-none-any.whl", hash = "sha256:16f4c05d2c455d9dc0d240648102a301133ffe295a31f625423775e895584f2d"},
-    {file = "tomtoolkit-3.0.0a2.tar.gz", hash = "sha256:ae95516ff6c4f5bba6b44cdae6125b33a24371d15d5085520bb00021e0505726"},
+    {file = "tomtoolkit-3.0.0a10-py3-none-any.whl", hash = "sha256:db8ffcdc84f0e720026808d2584a7b41b757d4ddf2e341790874419941f83c5f"},
+    {file = "tomtoolkit-3.0.0a10.tar.gz", hash = "sha256:e4a8038c0f69b97d02903d134cfcbf356247f6b9f48941885572edf0ddb65e95"},
 ]
 
 [package.dependencies]
 alerce = ">=2.0,<3.0"
 astroplan = ">=0.8,<0.11"
-astropy = {version = ">=5.3.3,<7", markers = "python_version >= \"3.10\""}
+astropy = {version = ">=5.3.3,<8", markers = "python_version >= \"3.10\""}
 astroquery = "<1"
 beautifulsoup4 = "<5"
-crispy-bootstrap4 = ">=2023.1,<2024.11"
+crispy-bootstrap5 = "<2027"
 cryptography = "<=47"
-django = "<6"
-django-bootstrap4 = ">3,<25"
+django = ">=5,<6"
+django-bootstrap5 = "<27"
 django-contrib-comments = ">=2.0,<3.0"
 django-crispy-forms = ">=2.0,<3.0"
 django-extensions = ">=3.0.0,<4.0.0"
@@ -3925,7 +3927,7 @@ django-filter = ">=23,<25"
 django-gravatar2 = ">=1.0.0,<2.0.0"
 django-guardian = ">=2.0.0,<3.0.0"
 django-htmx = ">=1.0.0,<2.0.0"
-django-tables2 = "<3"
+django-tables2 = ">=3.0,<4"
 django-tasks = ">=0.6.1,<0.7.0"
 djangorestframework = ">=3.15,<4"
 fits2image = ">=0.4,<0.5"
@@ -3936,7 +3938,7 @@ pillow = ">9.2,<13.0"
 plotly = "<6"
 python-dateutil = "<3"
 requests = "<3"
-specutils = "<2"
+specutils = ">=1.20.0,<3"
 
 [[package]]
 name = "tqdm"
@@ -4089,4 +4091,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.10.0,<3.13"
-content-hash = "190c323725e3aaf14fce340759e89604080137c60038a424ef996e22a0cc73b1"
+content-hash = "1b4f1ff25492383f5257925910dbccd31c0b194d335668b5c9efa4185e3d5c3b"

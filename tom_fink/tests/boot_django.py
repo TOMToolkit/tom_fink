@@ -100,4 +100,3 @@ def boot_django():
         ]
     )
     django.setup()
-

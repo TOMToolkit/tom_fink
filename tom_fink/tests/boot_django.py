@@ -6,6 +6,7 @@
 import os
 import django
 from django.conf import settings
+from tom_common.default_settings import TOMTOOKIT_INSTALLED_APPS
 
 APP_NAME = 'tom_fink'  # the stand-alone app we are testing
 
@@ -22,18 +23,7 @@ def boot_django():
                 'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
             }
         },
-        INSTALLED_APPS=(
-            'django.contrib.auth',
-            'django.contrib.contenttypes',
-            'django_extensions',
-            'guardian',
-            'tom_targets',
-            'tom_observations',
-            'tom_alerts',
-            'tom_dataproducts',
-            'tom_dataservices',
-            APP_NAME,  # defined above
-        ),
+        INSTALLED_APPS=TOMTOOKIT_INSTALLED_APPS+[APP_NAME],
         EXTRA_FIELDS={},
         TIME_ZONE='UTC',
         USE_TZ=True,

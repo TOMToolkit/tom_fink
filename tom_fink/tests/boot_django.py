@@ -17,7 +17,6 @@ def boot_django():
     settings.configure(
         BASE_DIR=BASE_DIR,
         # SECURITY WARNING: keep the secret key used in production secret!
-        SECRET_KEY='v5j-rg7sc+leg-m+vf947vi34+fs1%+$m%*l%sb7^fnwb$-29y',
         DEBUG=True,
         DATABASES={
             'default': {
@@ -62,40 +61,15 @@ def boot_django():
         STATICFILES_DIRS=[os.path.join(BASE_DIR, 'static')],
         MEDIA_ROOT=os.path.join(BASE_DIR, 'data'),
         MEDIA_URL='/data/',
-        TOM_ALERT_CLASSES=[
-            'tom_antares.antares.ANTARESBroker',
-        ],
         FACILITIES={
             'LCO': {
                 'portal_url': 'https://observe.lco.global',
                 'api_key': '',
             },
-            'GEM': {
-                'portal_url': {
-                    'GS': 'https://139.229.34.15:8443',
-                    'GN': 'https://128.171.88.221:8443',
-                },
-                'api_key': {
-                    'GS': '',
-                    'GN': '',
-                },
-                'user_email': '',
-                'programs': {
-                    'GS-YYYYS-T-NNN': {
-                        'MM': 'Std: Some descriptive text',
-                        'NN': 'Rap: Some descriptive text'
-                    },
-                    'GN-YYYYS-T-NNN': {
-                        'QQ': 'Std: Some descriptive text',
-                        'PP': 'Rap: Some descriptive text',
-                    },
-                },
-            },
         },
         TOM_FACILITY_CLASSES=[
-            'tom_observations.facilities.lco.LCOFacility',
+            'tom_observations.facilities.lco_redirect.LCORedirectFacility',
             'tom_observations.facilities.gemini.GEMFacility',
-            'tom_observations.facilities.soar.SOARFacility',
             'tom_observations.facilities.lt.LTFacility'
         ]
     )

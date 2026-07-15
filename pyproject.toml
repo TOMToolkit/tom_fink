@@ -50,7 +50,7 @@ version = "0.0.0" # version supplied by poetry-dynamic-versioning
 factory_boy = ">=3.1,<3.4"
 
 [tool.poetry.group.coverage.dependencies]
-coverage = "~6" # coveralls needs ~6 even though 7.3.2 is latest
+coverage = "~7" # coveralls needs ~6 even though 7.3.2 is latest
 coveralls = "~3"
 
 [tool.poetry.group.lint.dependencies]

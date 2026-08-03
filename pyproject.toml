@@ -38,7 +38,7 @@ requires-python = ">=3.10.0,<3.14"
 dependencies = [
     "tomtoolkit>=3.0.0,<4.0.0",
     "elasticsearch-dsl>=8.12.0,<9",
-    "Markdown>=3.5.2,<4",
+    "Markdown>=3.10.3,<4",
     "fink-client>=11,<12",
     "tom-alertstreams>=1.3.0,<2.0"
 ]

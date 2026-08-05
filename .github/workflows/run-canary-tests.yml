@@ -17,4 +17,4 @@ jobs:
           poetry env info  # display poetry's env info for debugging
           poetry install  --with test,coverage,lint
     - name: Run Tests
-      run: poetry run python tom_fink/tests/run_canary_tests.py
+      run: poetry run python tom_fink/tests/run_tests.py --canary

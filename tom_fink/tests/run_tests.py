@@ -35,4 +35,3 @@ if __name__ == '__main__':
     boot_django()
     print(f'running test(s) for {APP_NAME}')
     call_command('test', testname, canary_command_flag, verbosity=verbosity)
-    

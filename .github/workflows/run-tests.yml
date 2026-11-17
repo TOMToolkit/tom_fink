@@ -9,7 +9,7 @@ jobs:
     - uses: actions/checkout@v2
     - uses: actions/setup-python@v2
       with:
-        python-version: '3.11'
+        python-version: '3.14'
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
@@ -44,7 +44,7 @@ jobs:
       - uses: actions/checkout@v2
       - uses: actions/setup-python@v2
         with:
-          python-version: 3.9
+          python-version: 3.14
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip setuptools wheel
@@ -55,4 +55,5 @@ jobs:
       - name: Report Coverage
         run: poetry run coveralls
         env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
